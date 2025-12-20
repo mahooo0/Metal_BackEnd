@@ -1,0 +1,1995 @@
+{
+	"info": {
+		"_postman_id": "metal-backend-auth-api",
+		"name": "NestJS Auth API - Metal Backend",
+		"description": "Complete authentication API collection for NestJS backend with session management, RBAC, and admin features.\n\n**New Features (2025-01-29):**\n- Counterparties (Kontrahenty) CRUD API\n- Contacts management for counterparties\n- Documents management for counterparties\n- Filtering, sorting, and pagination\n\n**Previous Features (2025-01-22):**\n- Export all users without pagination\n- Soft delete users\n- Delete user comments\n- System roles metadata endpoint\n- All permissions list endpoint\n\n**Counterparties Management:**\n- Full CRUD for counterparties\n- Nested contacts management (add, update, delete, replace)\n- Nested documents management (add, delete, replace)\n- Filtering by name, EDRPOU, IPN\n- Sorting by name, createdAt\n- Pagination support\n\n**Admin Endpoints:**\n- User management (CRUD, search, export)\n- Comment management\n- Phone number management\n- User deletion (soft delete)\n\n**Role Management:**\n- System roles: Director, Admin, Technical Specialist, Sales Manager, Storekeeper, Accountant\n- Custom role creation with permissions\n- 90+ granular permissions\n\n**Authentication:**\n- Email/Password login\n- Google OAuth\n- Session-based auth\n- 2FA support\n- Email verification\n- Password recovery",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"passwordRepeat\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/register",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user. Password requirements:\n- Minimum 8 characters\n- Maximum 32 characters\n- At least one uppercase letter\n- At least one lowercase letter\n- At least one number\n- At least one special character"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Automatically save session cookie",
+									"pm.test(\"Session cookie is set\", function () {",
+									"    pm.expect(pm.cookies.has('session')).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"director@metalcompany.ua\",\n  \"password\": \"Director123!\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with email and password. Session cookie will be automatically saved.\n\n**Seeded test accounts:**\n- director@metalcompany.ua / Director123! (Full access, 2FA)\n- admin@metalcompany.ua / Admin123! (Admin)\n- manager1@metalcompany.ua / Manager123! (Sales Manager)\n- accountant@metalcompany.ua / Account123! (Accountant)\n- store@metalcompany.ua / Store123! (Storekeeper)\n- tech@metalcompany.ua / Tech123! (Technical)"
+					},
+					"response": []
+				},
+				{
+					"name": "Login with 2FA",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"token\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with email, password and 2FA token (if 2FA is enabled for the account)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Me",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user data with permissions\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('permissions');",
+									"    pm.expect(jsonData).to.have.property('roles');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/auth/me",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user with roles and permissions"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/auth/logout",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logout current user and destroy session"
+					},
+					"response": []
+				},
+				{
+					"name": "Get OAuth URL (Google)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/auth/oauth/connect/google",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"oauth",
+								"connect",
+								"google"
+							]
+						},
+						"description": "Get Google OAuth authorization URL. Returns: { \"url\": \"https://accounts.google.com/oauth/authorize?...\" }"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has users array and pagination\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('users');",
+									"    pm.expect(jsonData).to.have.property('pagination');",
+									"});",
+									"",
+									"// Auto-save first non-director user ID for other requests",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.users && jsonData.users.length > 1) {",
+									"    var user = jsonData.users.find(u => u.email !== 'director@metalcompany.ua') || jsonData.users[1];",
+									"    pm.collectionVariables.set('USER_ID', user.id);",
+									"    console.log('Saved USER_ID:', user.id, '(' + user.email + ')');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users?page=1&limit=20",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Items per page (default: 20)"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by email, phone, or name",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all users with pagination and search (Admin only). Requires users:read permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users with Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users?search=john&page=1&limit=20",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "john",
+									"description": "Search by email, phone, firstName, lastName, displayName"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Search users by email, phone, or name with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Comment to User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Comment created with metadata\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('text');",
+									"    pm.expect(jsonData).to.have.property('createdBy');",
+									"    pm.expect(jsonData).to.have.property('createdAt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"text\": \"User requested password reset on 2024-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/comments",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"comments"
+							]
+						},
+						"description": "Add comment to user (Admin only). Requires users:update permission.\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Comments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array of comments\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/comments",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"comments"
+							]
+						},
+						"description": "Get all comments for a user (Admin only). Requires users:read permission.\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Extra Phone to User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"User has extraPhones array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('extraPhones');",
+									"    pm.expect(jsonData.extraPhones).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/phones",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"phones"
+							]
+						},
+						"description": "Add additional phone number to user (Admin only). Requires users:update permission.\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Extra Phone from User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/phones/%2B1234567890",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"phones",
+								"%2B1234567890"
+							]
+						},
+						"description": "Remove extra phone number from user (Admin only). Requires users:update permission. Phone must be URL encoded (%2B for +).\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Export All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has users array and export metadata\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('users');",
+									"    pm.expect(jsonData).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('exportedAt');",
+									"    pm.expect(jsonData.users).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/export",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"export"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "Filter by user status (ACTIVE, INVITED, BLOCKED, DELETED)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Export all users without pagination (Admin only). Requires users:read permission. Returns complete user data including roles, permissions, and comments. Optional status filter available."
+					},
+					"response": []
+				},
+				{
+					"name": "Export All Users (Filtered by Status)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/export?status=ACTIVE",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"export"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "ACTIVE",
+									"description": "ACTIVE | INVITED | BLOCKED | DELETED"
+								}
+							]
+						},
+						"description": "Export users filtered by status. Returns only users matching the specified status."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User deleted successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.user.status).to.eql('DELETED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}"
+							]
+						},
+						"description": "Soft delete user (Admin only). Requires users:delete permission. Sets user status to DELETED.\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User Comments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Comments deleted successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('deletedCount');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/comments",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"comments"
+							]
+						},
+						"description": "Delete all comments for a user (Admin only). Requires users:update permission. Hard delete.\n\n**Note:** USER_ID is auto-saved from 'Get All Users' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Single User Comment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Comment deleted successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/admin/users/{{USER_ID}}/comments/:commentId",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{USER_ID}}",
+								"comments",
+								":commentId"
+							],
+							"variable": [
+								{
+									"key": "commentId",
+									"value": "comment-uuid-here",
+									"description": "Comment ID (get from Get User Comments)"
+								}
+							]
+						},
+						"description": "Delete a specific comment by ID (Admin only). Requires users:update permission.\n\n**Note:** USER_ID is auto-saved. Get commentId from 'Get User Comments' request."
+					},
+					"response": []
+				}
+			],
+			"description": "Admin endpoints for user management"
+		},
+		{
+			"name": "Email Confirmation",
+			"item": [
+				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"your-verification-token-from-email\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/email-confirmation",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"email-confirmation"
+							]
+						},
+						"description": "Verify email address using token sent to user's email"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Password Recovery",
+			"item": [
+				{
+					"name": "Request Password Reset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/recovery",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"recovery"
+							]
+						},
+						"description": "Send password reset email to user"
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Recovery Token",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/auth/recovery/confirm/:token",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"recovery",
+								"confirm",
+								":token"
+							],
+							"variable": [
+								{
+									"key": "token",
+									"value": "your-reset-token-from-email",
+									"description": "Reset token from email"
+								}
+							]
+						},
+						"description": "Validate password reset token (optional step)"
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"password\": \"NewSecurePass123!\",\n  \"passwordRepeat\": \"NewSecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/auth/recovery/password/:token",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"auth",
+								"recovery",
+								"password",
+								":token"
+							],
+							"variable": [
+								{
+									"key": "token",
+									"value": "your-reset-token-from-email",
+									"description": "Reset token from email"
+								}
+							]
+						},
+						"description": "Reset password using reset token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Profile",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/users/profile",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						},
+						"description": "Get current authenticated user profile (requires session)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"displayName\": \"John Updated\",\n  \"email\": \"john.updated@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"position\": \"Software Engineer\",\n  \"isTwoFactorEnabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users/profile",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						},
+						"description": "Update current user profile (requires session)"
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"SecurePass123!\",\n  \"newPassword\": \"NewSecurePass123!\",\n  \"newPasswordRepeat\": \"NewSecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users/password",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"password"
+							]
+						},
+						"description": "Change password for current user (requires session)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/users/profile/:id",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"profile",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-uuid-here",
+									"description": "User ID (UUID)"
+								}
+							]
+						},
+						"description": "Get user profile by ID (requires users:read permission)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User by ID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"displayName\": \"Updated Name\",\n  \"email\": \"updated@example.com\",\n  \"firstName\": \"Updated\",\n  \"lastName\": \"User\",\n  \"position\": \"Manager\",\n  \"isTwoFactorEnabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users/profile/:id",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users",
+								"profile",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "user-uuid-here",
+									"description": "User ID (UUID)"
+								}
+							]
+						},
+						"description": "Update user profile by ID (requires users:update permission)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Roles",
+			"item": [
+				{
+					"name": "Get System Roles Metadata",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has system roles data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('systemRoles');",
+									"    pm.expect(jsonData).to.have.property('total');",
+									"    pm.expect(jsonData.systemRoles).to.be.an('array');",
+									"    pm.expect(jsonData.systemRoles.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/roles/system-roles",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								"system-roles"
+							]
+						},
+						"description": "Get metadata for all system roles (Director, Admin, Technical Specialist, Sales Manager, Storekeeper, Accountant). Returns role descriptions and default permissions. Requires roles:read permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Permissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has permissions data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('total');",
+									"    pm.expect(jsonData).to.have.property('categories');",
+									"    pm.expect(jsonData).to.have.property('all');",
+									"    pm.expect(jsonData.categories).to.be.an('array');",
+									"    pm.expect(jsonData.all).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/roles/permissions",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								"permissions"
+							]
+						},
+						"description": "Get all available permissions grouped by category (users, roles, orders, tasks, inventory, etc.). Used for displaying permissions when creating/editing roles. Requires roles:read permission."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/roles",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "Get all roles including system and custom roles (requires roles:read permission)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/roles/:id",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here",
+									"description": "Role ID (UUID)"
+								}
+							]
+						},
+						"description": "Get role by ID (requires roles:read permission)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Custom Role\",\n  \"permissions\": [\"users:read\", \"orders:read\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/roles",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles"
+							]
+						},
+						"description": "Create new custom role (requires roles:create permission)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Role Name\",\n  \"permissions\": [\"users:read\", \"users:update\", \"orders:read\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/roles/:id",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here",
+									"description": "Role ID (UUID)"
+								}
+							]
+						},
+						"description": "Update role (requires roles:update permission, cannot modify system roles)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/roles/:id",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "role-uuid-here",
+									"description": "Role ID (UUID)"
+								}
+							]
+						},
+						"description": "Delete role (requires roles:delete permission, cannot delete system roles)"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Roles to User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleIds\": [\"role-uuid-1\", \"role-uuid-2\"]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/roles/assign/:userId",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles",
+								"assign",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "user-uuid-here",
+									"description": "User ID (UUID)"
+								}
+							]
+						},
+						"description": "Assign roles to user (requires roles:assign permission)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Counterparties",
+			"item": [
+				{
+					"name": "Get All Counterparties",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has data array and pagination\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    pm.expect(jsonData.meta).to.have.property('total');",
+									"});",
+									"",
+									"// Auto-save first counterparty ID for other requests",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.data && jsonData.data.length > 0) {",
+									"    var cp = jsonData.data[0];",
+									"    pm.collectionVariables.set('COUNTERPARTY_ID', cp.id);",
+									"    console.log('Saved COUNTERPARTY_ID:', cp.id, '(' + cp.name + ')');",
+									"    ",
+									"    if (cp.contacts && cp.contacts.length > 0) {",
+									"        pm.collectionVariables.set('CONTACT_ID', cp.contacts[0].id);",
+									"        console.log('Saved CONTACT_ID:', cp.contacts[0].id);",
+									"    }",
+									"    if (cp.documents && cp.documents.length > 0) {",
+									"        pm.collectionVariables.set('DOCUMENT_ID', cp.documents[0].id);",
+									"        console.log('Saved DOCUMENT_ID:', cp.documents[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties?page=1&limit=20",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Items per page (default: 20, max: 100)"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by name",
+									"disabled": true
+								},
+								{
+									"key": "edrpou",
+									"value": "",
+									"description": "Filter by EDRPOU code",
+									"disabled": true
+								},
+								{
+									"key": "ipn",
+									"value": "",
+									"description": "Filter by IPN code",
+									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt",
+									"description": "Sort field: name, createdAt (default: createdAt)",
+									"disabled": true
+								},
+								{
+									"key": "sortOrder",
+									"value": "desc",
+									"description": "Sort order: asc, desc (default: desc)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all counterparties with pagination, filtering and sorting. Requires counterparties:read permission.\n\n**Filters:**\n- search: Search by name (partial match)\n- edrpou: Filter by EDRPOU code (exact match)\n- ipn: Filter by IPN code (exact match)\n\n**Sorting:**\n- sortBy: name, createdAt\n- sortOrder: asc, desc"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Counterparties (with Search)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties?search=Метал&sortBy=name&sortOrder=asc",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Метал",
+									"description": "Search by name"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Search counterparties by name with sorting"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Counterparty by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has counterparty data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('contacts');",
+									"    pm.expect(jsonData).to.have.property('documents');",
+									"});",
+									"",
+									"// Auto-save contact and document IDs for other requests",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.contacts && jsonData.contacts.length > 0) {",
+									"    pm.collectionVariables.set('CONTACT_ID', jsonData.contacts[0].id);",
+									"    console.log('Saved CONTACT_ID:', jsonData.contacts[0].id);",
+									"}",
+									"if (jsonData.documents && jsonData.documents.length > 0) {",
+									"    pm.collectionVariables.set('DOCUMENT_ID', jsonData.documents[0].id);",
+									"    console.log('Saved DOCUMENT_ID:', jsonData.documents[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}"
+							]
+						},
+						"description": "Get counterparty by ID with contacts and documents. Requires counterparties:read permission.\n\n**Note:** COUNTERPARTY_ID is auto-saved from 'Get All Counterparties' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Counterparty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Counterparty created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('createdAt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ТОВ \\\"Нова Компанія\\\"\",\n  \"comment\": \"Новий постачальник металопрокату\",\n  \"legalAddress\": \"м. Київ, вул. Хрещатик, 1\",\n  \"actualAddress\": \"м. Київ, вул. Хрещатик, 1, офіс 100\",\n  \"bankDetails\": \"IBAN UA213223130000026007233566001, АТ КБ \\\"ПриватБанк\\\"\",\n  \"edrpou\": \"12345678\",\n  \"ipn\": \"123456789012\",\n  \"vatCertificate\": \"200012345678\",\n  \"contacts\": [\n    {\n      \"phone\": \"+380441234567\",\n      \"email\": \"office@company.ua\"\n    },\n    {\n      \"phone\": \"+380501234567\",\n      \"email\": \"sales@company.ua\"\n    }\n  ],\n  \"documents\": [\n    {\n      \"name\": \"Договір поставки 2024\",\n      \"type\": \"pdf\",\n      \"path\": \"/docs/company/contract_2024.pdf\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties"
+							]
+						},
+						"description": "Create new counterparty with optional contacts and documents. Requires counterparties:create permission.\n\n**Required fields:**\n- name: Company name\n- comment: Description/notes\n\n**Optional fields:**\n- legalAddress: Legal address\n- actualAddress: Actual address\n- bankDetails: Bank account details\n- edrpou: EDRPOU code (8 or 10 digits)\n- ipn: IPN code (10 or 12 digits)\n- vatCertificate: VAT certificate number\n- contacts: Array of contacts\n- documents: Array of documents"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Counterparty (Minimal)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ФОП Іваненко І.І.\",\n  \"comment\": \"Приватний підприємець\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties"
+							]
+						},
+						"description": "Create counterparty with minimal required fields"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Counterparty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Counterparty updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('updatedAt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"comment\": \"Оновлений коментар - надійний партнер з 2020 року\",\n  \"bankDetails\": \"IBAN UA713052990000026001234567890, АТ \\\"Ощадбанк\\\"\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}"
+							]
+						},
+						"description": "Update counterparty by ID. Requires counterparties:update permission. Only specified fields will be updated.\n\n**Note:** COUNTERPARTY_ID is auto-saved from 'Get All Counterparties' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Counterparty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}"
+							]
+						},
+						"description": "Delete counterparty by ID. Requires counterparties:delete permission. This will also delete all associated contacts and documents (cascade delete).\n\n**Note:** COUNTERPARTY_ID is auto-saved from 'Get All Counterparties' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Contact to Counterparty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Contact created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+380671234567\",\n  \"email\": \"manager@company.ua\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/contacts",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"contacts"
+							]
+						},
+						"description": "Add new contact to counterparty. Requires counterparties:update permission.\n\n**Fields:**\n- phone: Phone number (optional)\n- email: Email address (optional)\n\nAt least one of phone or email must be provided."
+					},
+					"response": []
+				},
+				{
+					"name": "Replace All Contacts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Contacts replaced\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('contacts');",
+									"    pm.expect(jsonData.contacts).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contacts\": [\n    {\n      \"phone\": \"+380441111111\",\n      \"email\": \"new.office@company.ua\"\n    },\n    {\n      \"phone\": \"+380502222222\",\n      \"email\": \"new.sales@company.ua\"\n    },\n    {\n      \"phone\": \"+380673333333\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/contacts",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"contacts"
+							]
+						},
+						"description": "Replace all contacts for a counterparty. Requires counterparties:update permission. Existing contacts will be deleted and replaced with the new list."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Contact",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Contact updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('updatedAt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"+380509999999\",\n  \"email\": \"updated@company.ua\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/contacts/{{CONTACT_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"contacts",
+								"{{CONTACT_ID}}"
+							]
+						},
+						"description": "Update existing contact. Requires counterparties:update permission.\n\n**Note:** IDs are auto-saved from 'Get Counterparty by ID' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Contact",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/contacts/{{CONTACT_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"contacts",
+								"{{CONTACT_ID}}"
+							]
+						},
+						"description": "Delete contact from counterparty. Requires counterparties:update permission.\n\n**Note:** IDs are auto-saved from 'Get Counterparty by ID' request."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Document to Counterparty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Document created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('type');",
+									"    pm.expect(jsonData).to.have.property('path');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Акт звірки Q4 2024\",\n  \"type\": \"pdf\",\n  \"path\": \"/docs/company/reconciliation_q4_2024.pdf\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/documents",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"documents"
+							]
+						},
+						"description": "Add new document to counterparty. Requires counterparties:update permission.\n\n**Required fields:**\n- name: Document name\n- type: Document type (pdf, docx, xlsx, etc.)\n- path: Path to document file"
+					},
+					"response": []
+				},
+				{
+					"name": "Replace All Documents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Documents replaced\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('documents');",
+									"    pm.expect(jsonData.documents).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"documents\": [\n    {\n      \"name\": \"Новий договір 2025\",\n      \"type\": \"pdf\",\n      \"path\": \"/docs/company/contract_2025.pdf\"\n    },\n    {\n      \"name\": \"Прайс-лист 2025\",\n      \"type\": \"xlsx\",\n      \"path\": \"/docs/company/pricelist_2025.xlsx\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/documents",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"documents"
+							]
+						},
+						"description": "Replace all documents for a counterparty. Requires counterparties:update permission. Existing documents will be deleted and replaced with the new list."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Document",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/counterparties/{{COUNTERPARTY_ID}}/documents/{{DOCUMENT_ID}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"counterparties",
+								"{{COUNTERPARTY_ID}}",
+								"documents",
+								"{{DOCUMENT_ID}}"
+							]
+						},
+						"description": "Delete document from counterparty. Requires counterparties:update permission.\n\n**Note:** IDs are auto-saved from 'Get Counterparty by ID' request."
+					},
+					"response": []
+				}
+			],
+			"description": "Counterparties (Kontrahenty) management endpoints. Includes CRUD operations for counterparties, contacts, and documents.\n\n**Permissions:**\n- counterparties:read - View counterparties\n- counterparties:create - Create counterparties\n- counterparties:update - Update counterparties, manage contacts and documents\n- counterparties:delete - Delete counterparties"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/health",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check API health status"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:4000",
+			"type": "string"
+		},
+		{
+			"key": "COUNTERPARTY_ID",
+			"value": "",
+			"type": "string",
+			"description": "Auto-saved from Get All Counterparties"
+		},
+		{
+			"key": "CONTACT_ID",
+			"value": "",
+			"type": "string",
+			"description": "Auto-saved from Get Counterparty by ID"
+		},
+		{
+			"key": "DOCUMENT_ID",
+			"value": "",
+			"type": "string",
+			"description": "Auto-saved from Get Counterparty by ID"
+		},
+		{
+			"key": "USER_ID",
+			"value": "",
+			"type": "string",
+			"description": "Auto-saved from Get All Users"
+		}
+	]
+}

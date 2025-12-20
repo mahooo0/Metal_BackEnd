@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: metal-backend
+    ports:
+      - "${APPLICATION_PORT:-4000}:4000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - APPLICATION_PORT=4000
+      - APPLICATION_URL=${APPLICATION_URL}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
+      - COOKIES_SECRET=${COOKIES_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SESSION_NAME=${SESSION_NAME}
+      - SESSION_DOMAIN=${SESSION_DOMAIN}
+      - SESSION_MAX_AGE=${SESSION_MAX_AGE}
+      - SESSION_HTTP_ONLY=${SESSION_HTTP_ONLY}
+      - SESSION_SECURE=${SESSION_SECURE}
+      - SESSION_FOLDER=${SESSION_FOLDER}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_USER=${REDIS_USER}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URI=redis://${REDIS_USER}:${REDIS_PASSWORD}@redis:6379
+      - GOOGLE_RECAPTCHA_SECRET_KEY=${GOOGLE_RECAPTCHA_SECRET_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_LOGIN=${MAIL_LOGIN}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_FROM=${MAIL_FROM}
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - backend
+
+  db:
+    container_name: postgres
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  redis:
+    container_name: redis
+    image: redis:6.2
+    restart: always
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    ports:
+      - 6379:6379
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  backend:
+    driver: bridge

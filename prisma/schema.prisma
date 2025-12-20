@@ -1,0 +1,712 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}
+
+model User {
+  id String @id @default(uuid())
+
+  email     String  @unique
+  phone     String?
+  password  String
+  firstName String  @default("") @map("first_name")
+  lastName  String  @default("") @map("last_name")
+  position  String?
+
+  displayName String  @default("") @map("display_name")
+  picture     String?
+
+  status                UserStatus @default(ACTIVE)
+  requirePasswordChange Boolean    @default(false) @map("require_password_change")
+  passwordChangedAt     DateTime?  @map("password_changed_at")
+
+  isVerified         Boolean @default(false) @map("is_verified")
+  isTwoFactorEnabled Boolean @default(false) @map("is_two_factor_enabled")
+
+  method              AuthMethod @default(CREDENTIALS)
+  permissionsOverride String[]   @default([]) @map("permissions_override")
+
+  lastLoginAt DateTime? @map("last_login_at")
+  lastIp      String?   @map("last_ip")
+  lastUa      String?   @map("last_ua")
+
+  extraPhones String[] @default([]) @map("extra_phones")
+
+  accounts        Account[]
+  roles           UserRole[]
+  passwordHistory PasswordHistory[]
+  actorAuditLogs  AuditLog[]        @relation("AuditLogActor")
+  targetAuditLogs AuditLog[]        @relation("AuditLogTarget")
+  comments        UserComment[]
+
+  // CRM Relations
+  orderRequestsCreated       OrderRequest[]        @relation("OrderRequestCreatedBy")
+  orderRequestComments       OrderRequestComment[] @relation("OrderRequestCommentAuthor")
+  planRecordsCreated         PlanRecord[]          @relation("PlanRecordCreatedBy")
+  tasksCreated               Task[]                @relation("TaskCreatedBy")
+  tasksResponsible           Task[]                @relation("TaskResponsibleUser")
+  taskComments               TaskComment[]         @relation("TaskCommentAuthor")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Role {
+  id   String @id @default(uuid())
+  name String @unique
+
+  system      Boolean  @default(false)
+  permissions String[] @default([])
+
+  users UserRole[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Account {
+  id String @id @default(uuid())
+
+  type     String
+  provider String
+
+  refreshToken String? @map("refresh_token")
+  accessToken  String? @map("access_token")
+  expiresAt    BigInt  @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String? @map("user_id")
+
+  @@map("accounts")
+}
+
+model Token {
+  id String @id @default(uuid())
+
+  email     String
+  token     String    @unique
+  type      TokenType
+  expiresIn DateTime  @map("expires_in")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tokens")
+}
+
+model PasswordHistory {
+  id String @id @default(uuid())
+
+  userId       String @map("user_id")
+  passwordHash String @map("password_hash")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("password_history")
+}
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  actorId    String?    @map("actor_id")
+  action     String
+  targetType String?    @map("target_type")
+  targetId   String?    @map("target_id")
+  meta       Json?
+  ip         String?
+  ua         String?
+  success    Boolean    @default(true)
+  errorCode  String?    @map("error_code")
+
+  actor  User? @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+  target User? @relation("AuditLogTarget", fields: [targetId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
+}
+
+model UserComment {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  text   String
+
+  createdById String   @map("created_by_id")
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("user_comments")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  BLOCKED
+  DELETED
+}
+
+enum AuthMethod {
+  CREDENTIALS
+  GOOGLE
+}
+
+enum TokenType {
+  VERIFICATION
+  TWO_FACTOR
+  PASSWORD_RESET
+  INVITATION
+}
+
+// ==================== Counterparties ====================
+
+model Counterparty {
+  id String @id @default(uuid())
+
+  name    String
+  comment String
+
+  legalAddress   String? @map("legal_address")
+  actualAddress  String? @map("actual_address")
+  bankDetails    String? @map("bank_details")
+  edrpou         String?
+  ipn            String?
+  vatCertificate String? @map("vat_certificate")
+
+  contacts      Contact[]
+  documents     Document[]
+  orderRequests OrderRequest[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("counterparties")
+}
+
+model Contact {
+  id String @id @default(uuid())
+
+  phone String?
+  email String?
+
+  counterpartyId String       @map("counterparty_id")
+  counterparty   Counterparty @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([counterpartyId])
+  @@map("contacts")
+}
+
+model Document {
+  id String @id @default(uuid())
+
+  name String
+  type String
+  path String
+
+  counterpartyId String       @map("counterparty_id")
+  counterparty   Counterparty @relation(fields: [counterpartyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([counterpartyId])
+  @@map("documents")
+}
+
+// ==================== Order Types ====================
+
+model OrderType {
+  id   String @id @default(uuid())
+  name String @unique
+
+  orderRequests OrderRequest[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("order_types")
+}
+
+// ==================== Order Requests ====================
+
+model OrderRequest {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+  indexLike   String @unique @map("index_like")
+
+  status OrderRequestStatus @default(NEW_ORDER)
+
+  startTime DateTime? @map("start_time")
+  endTime   DateTime? @map("end_time")
+
+  orderTypeId String    @map("order_type_id")
+  orderType   OrderType @relation(fields: [orderTypeId], references: [id])
+
+  counterpartyId String?       @map("counterparty_id")
+  counterparty   Counterparty? @relation(fields: [counterpartyId], references: [id])
+
+  createdById String @map("created_by_id")
+  createdBy   User   @relation("OrderRequestCreatedBy", fields: [createdById], references: [id])
+
+  files    OrderRequestFile[]
+  comments OrderRequestComment[]
+  tasks    Task[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([orderTypeId])
+  @@index([counterpartyId])
+  @@index([createdById])
+  @@index([status])
+  @@index([indexLike])
+  @@map("order_requests")
+}
+
+model OrderRequestFile {
+  id String @id @default(uuid())
+
+  fileName   String @map("file_name")
+  filePath   String @map("file_path")
+  fileSize   Int    @map("file_size")
+  mimeType   String @map("mime_type")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  orderRequestId String       @map("order_request_id")
+  orderRequest   OrderRequest @relation(fields: [orderRequestId], references: [id], onDelete: Cascade)
+
+  @@index([orderRequestId])
+  @@map("order_request_files")
+}
+
+model OrderRequestComment {
+  id String @id @default(uuid())
+
+  text String
+
+  authorId String @map("author_id")
+  author   User   @relation("OrderRequestCommentAuthor", fields: [authorId], references: [id])
+
+  orderRequestId String       @map("order_request_id")
+  orderRequest   OrderRequest @relation(fields: [orderRequestId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([orderRequestId])
+  @@index([authorId])
+  @@map("order_request_comments")
+}
+
+enum OrderRequestStatus {
+  NEW_ORDER       @map("new_order")
+  CALCULATION     @map("calculation")
+  CLARIFICATION   @map("clarification")
+  EXTRA_SERVICES  @map("extra_services")
+
+  @@map("order_request_status")
+}
+
+// ==================== Metal Brands ====================
+
+model MetalBrand {
+  id   String @id @default(uuid())
+  name String @unique
+
+  planRecords   PlanRecord[]
+  materialItems MaterialItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("metal_brands")
+}
+
+// ==================== Plan Registry ====================
+
+model PlanRecord {
+  id String @id @default(uuid())
+
+  registrationDate DateTime @map("registration_date")
+  planNumber       String   @unique @map("plan_number")
+  orderNumber      String   @map("order_number")
+  customer         String
+  metalThickness   Float    @map("metal_thickness")
+
+  metalBrandId String     @map("metal_brand_id")
+  metalBrand   MetalBrand @relation(fields: [metalBrandId], references: [id])
+
+  createdById String @map("created_by_id")
+  createdBy   User   @relation("PlanRecordCreatedBy", fields: [createdById], references: [id])
+
+  files PlanRecordFile[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([metalBrandId])
+  @@index([createdById])
+  @@index([registrationDate])
+  @@index([planNumber])
+  @@index([orderNumber])
+  @@map("plan_records")
+}
+
+model PlanRecordFile {
+  id String @id @default(uuid())
+
+  fileName   String   @map("file_name")
+  filePath   String   @map("file_path")
+  fileSize   Int      @map("file_size")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  planRecordId String     @map("plan_record_id")
+  planRecord   PlanRecord @relation(fields: [planRecordId], references: [id], onDelete: Cascade)
+
+  @@index([planRecordId])
+  @@map("plan_record_files")
+}
+
+// ==================== Task Types ====================
+
+model TaskType {
+  id   String @id @default(uuid())
+  name String @unique
+
+  tasks Task[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("task_types")
+}
+
+// ==================== Tasks ====================
+
+model Task {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+
+  status TaskStatus @default(PLANNING)
+
+  startExecutionDate DateTime @map("start_execution_date")
+  startTime          DateTime @map("start_time")
+  endTime            DateTime @map("end_time")
+
+  taskTypeId String   @map("task_type_id")
+  taskType   TaskType @relation(fields: [taskTypeId], references: [id])
+
+  orderRequestId String       @map("order_request_id")
+  orderRequest   OrderRequest @relation(fields: [orderRequestId], references: [id])
+
+  createdById String @map("created_by_id")
+  createdBy   User   @relation("TaskCreatedBy", fields: [createdById], references: [id])
+
+  responsibleUserId String? @map("responsible_user_id")
+  responsibleUser   User?   @relation("TaskResponsibleUser", fields: [responsibleUserId], references: [id])
+
+  comments TaskComment[]
+  files    TaskFile[]
+  timeline TaskTimelineItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([taskTypeId])
+  @@index([orderRequestId])
+  @@index([createdById])
+  @@index([responsibleUserId])
+  @@index([status])
+  @@index([startExecutionDate])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model TaskComment {
+  id String @id @default(uuid())
+
+  text String
+
+  authorId String @map("author_id")
+  author   User   @relation("TaskCommentAuthor", fields: [authorId], references: [id])
+
+  taskId String @map("task_id")
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([taskId])
+  @@index([authorId])
+  @@map("task_comments")
+}
+
+model TaskFile {
+  id String @id @default(uuid())
+
+  fileName   String   @map("file_name")
+  filePath   String   @map("file_path")
+  fileSize   Int      @map("file_size")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  taskId String @map("task_id")
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_files")
+}
+
+model TaskTimelineItem {
+  id String @id @default(uuid())
+
+  actionName TimelineAction @map("action_name")
+  time       DateTime
+
+  taskId String @map("task_id")
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@map("task_timeline_items")
+}
+
+enum TaskStatus {
+  PLANNING
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  CALCULATION
+  DONE
+  CANCELED
+
+  @@map("task_status")
+}
+
+enum TimelineAction {
+  START
+  STOP
+  END
+  RESTART
+
+  @@map("timeline_action")
+}
+
+// ==================== Materials Management ====================
+
+// ==================== Material Items (Catalog) ====================
+
+model MaterialItem {
+  id String @id @default(uuid())
+
+  name          String
+  thickness     Float
+  sheetType     String  @map("sheet_type")
+  cuttingSupply Float?  @map("cutting_supply")
+  cuttingTime   Float?  @map("cutting_time")
+  description   String?
+
+  typeId String     @map("type_id")
+  type   MetalBrand @relation(fields: [typeId], references: [id])
+
+  materials     Material[]
+  purchaseItems PurchaseItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([typeId])
+  @@index([thickness])
+  @@index([sheetType])
+  @@map("material_items")
+}
+
+// ==================== Materials (Inventory) ====================
+
+model Material {
+  id String @id @default(uuid())
+
+  date            DateTime
+  width           Float
+  length          Float
+  dimensions      String?
+  volume          Float?
+  weight          Float?
+  priceCategories Json           @default("{}") @map("price_categories")
+  status          MaterialStatus @default(IN_PROCESS)
+  quantity        Int            @default(0)
+  comment         String?
+  warningQty      Int?           @map("warning_qty")
+
+  materialItemId String       @map("material_item_id")
+  materialItem   MaterialItem @relation(fields: [materialItemId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([materialItemId])
+  @@index([status])
+  @@index([date])
+  @@map("materials")
+}
+
+enum MaterialStatus {
+  IN_PROCESS
+  UNDER_REVIEW
+  PLANNING
+  EXPIRED
+  LAUNCH
+
+  @@map("material_status")
+}
+
+// ==================== Suppliers ====================
+
+model Supplier {
+  id String @id @default(uuid())
+
+  name          String
+  legalAddress  String? @map("legal_address")
+  actualAddress String? @map("actual_address")
+  bankDetails   String? @map("bank_details")
+  edrpou        String?
+  ipn           String?
+  taxId         String? @map("tax_id")
+
+  contacts  SupplierContact[]
+  purchases Purchase[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("suppliers")
+}
+
+model SupplierContact {
+  id String @id @default(uuid())
+
+  name   String
+  phone  String?
+  email  String?
+  avatar String?
+
+  supplierId String   @map("supplier_id")
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([supplierId])
+  @@map("supplier_contacts")
+}
+
+// ==================== Purchases ====================
+
+model Purchase {
+  id String @id @default(uuid())
+
+  date        DateTime
+  purchaseId  String         @unique @map("purchase_id")
+  totalAmount Float          @default(0) @map("total_amount")
+  status      PurchaseStatus @default(IN_PROCESS)
+  comment     String?
+
+  supplierId String   @map("supplier_id")
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+
+  items PurchaseItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([date])
+  @@index([purchaseId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id String @id @default(uuid())
+
+  date             DateTime
+  width            Float
+  length           Float
+  dimensions       String?
+  volume           Float?
+  weight           Float?
+  priceCategories  Json               @default("{}") @map("price_categories")
+  status           PurchaseItemStatus @default(ORDERED)
+  orderedQuantity  Int                @map("ordered_quantity")
+  receivedQuantity Int                @default(0) @map("received_quantity")
+  comment          String?
+  warningQty       Int?               @map("warning_qty")
+
+  purchaseId String   @map("purchase_id")
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  materialItemId String       @map("material_item_id")
+  materialItem   MaterialItem @relation(fields: [materialItemId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([purchaseId])
+  @@index([materialItemId])
+  @@index([status])
+  @@map("purchase_items")
+}
+
+enum PurchaseStatus {
+  IN_PROCESS
+  UNDER_REVIEW
+  PLANNING
+  EXPIRED
+  LAUNCH
+  RECEIVED
+
+  @@map("purchase_status")
+}
+
+enum PurchaseItemStatus {
+  ORDERED
+  PARTIALLY_RECEIVED
+  READY
+  RECEIVED
+  CANCELLED
+
+  @@map("purchase_item_status")
+}

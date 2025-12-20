@@ -1,0 +1,7 @@
+export * from './contact.dto'
+export * from './counterparty-query.dto'
+export * from './create-counterparty.dto'
+export * from './document.dto'
+export * from './replace-contacts.dto'
+export * from './replace-documents.dto'
+export * from './update-counterparty.dto'
