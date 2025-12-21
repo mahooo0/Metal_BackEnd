@@ -49,7 +49,10 @@ export class PurchasesController {
     status: 201,
     description: 'Purchase created successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or supplier not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or supplier not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 409, description: 'Purchase ID already exists' })
   async create(@Body() dto: CreatePurchaseDto) {
@@ -96,7 +99,10 @@ export class PurchasesController {
     status: 200,
     description: 'Purchase updated successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or supplier not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or supplier not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Purchase not found' })
   @ApiResponse({ status: 409, description: 'Purchase ID already exists' })
@@ -110,14 +116,18 @@ export class PurchasesController {
   @RequirePermissions(Permission.PURCHASES_UPDATE_STATUS)
   @ApiOperation({
     summary: 'Update purchase status',
-    description: 'Cannot change to RECEIVED status. Use POST /purchases/:id/submit instead.'
+    description:
+      'Cannot change to RECEIVED status. Use POST /purchases/:id/submit instead.'
   })
   @ApiParam({ name: 'id', description: 'Purchase ID (UUID)' })
   @ApiResponse({
     status: 200,
     description: 'Purchase status updated successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid status or cannot set RECEIVED' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid status or cannot set RECEIVED'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Purchase not found' })
   async updateStatus(
@@ -139,7 +149,8 @@ export class PurchasesController {
   @ApiParam({ name: 'id', description: 'Purchase ID (UUID)' })
   @ApiResponse({
     status: 200,
-    description: 'Purchase submitted successfully. Returns purchase and created materials.'
+    description:
+      'Purchase submitted successfully. Returns purchase and created materials.'
   })
   @ApiResponse({
     status: 400,

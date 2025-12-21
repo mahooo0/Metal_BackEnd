@@ -101,11 +101,7 @@ export class PurchaseItemsService {
     return item
   }
 
-  async update(
-    purchaseId: string,
-    itemId: string,
-    dto: UpdatePurchaseItemDto
-  ) {
+  async update(purchaseId: string, itemId: string, dto: UpdatePurchaseItemDto) {
     await this.findOne(purchaseId, itemId)
 
     // Validate material item if provided
@@ -128,7 +124,9 @@ export class PurchaseItemsService {
       data: {
         ...rest,
         ...(priceCategories && { priceCategories: priceCategories as object }),
-        ...(materialItemId && { materialItem: { connect: { id: materialItemId } } })
+        ...(materialItemId && {
+          materialItem: { connect: { id: materialItemId } }
+        })
       },
       include: { materialItem: { include: { type: true } } }
     })

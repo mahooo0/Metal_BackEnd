@@ -20,7 +20,6 @@ export class MailService {
 
     const html = await render(ConfirmationTemplate({ token, domain }))
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.sendEmail(email, 'Confirm your email', html)
   }
 
@@ -29,7 +28,6 @@ export class MailService {
 
     const html = await render(RecoveryTemplate({ token, domain }))
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.sendEmail(email, 'Reset your password', html)
   }
 
@@ -49,7 +47,6 @@ export class MailService {
 
     const html = await render(TwoFactorTemplate({ token, domain }))
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.sendEmail(email, 'Reset your password', html)
   }
 }

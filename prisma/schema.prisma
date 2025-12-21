@@ -341,11 +341,28 @@ enum OrderRequestStatus {
   @@map("order_request_status")
 }
 
+// ==================== Categories ====================
+
+model Category {
+  id   String @id @default(uuid())
+  name String @unique
+
+  metalBrands MetalBrand[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
 // ==================== Metal Brands ====================
 
 model MetalBrand {
   id   String @id @default(uuid())
   name String @unique
+
+  categoryId String   @map("category_id")
+  category   Category @relation(fields: [categoryId], references: [id])
 
   planRecords   PlanRecord[]
   materialItems MaterialItem[]
@@ -353,6 +370,7 @@ model MetalBrand {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([categoryId])
   @@map("metal_brands")
 }
 
@@ -544,6 +562,8 @@ model MaterialItem {
 
   materials     Material[]
   purchaseItems PurchaseItem[]
+  bendingPrices BendingPrice[] @relation("BendingPrices")
+  cuttingPrices CuttingPrice[] @relation("CuttingPrices")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -574,6 +594,9 @@ model Material {
   materialItemId String       @map("material_item_id")
   materialItem   MaterialItem @relation(fields: [materialItemId], references: [id])
 
+  inventoryItems InventoryItem[]
+  writeOffItems  WriteOffItem[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -587,7 +610,7 @@ enum MaterialStatus {
   IN_PROCESS
   UNDER_REVIEW
   PLANNING
-  EXPIRED
+  CALCULATION
   LAUNCH
 
   @@map("material_status")
@@ -669,6 +692,8 @@ model PurchaseItem {
   volume           Float?
   weight           Float?
   priceCategories  Json               @default("{}") @map("price_categories")
+  purchasePrice    Float              @map("purchase_price")
+  salePrice        Float              @map("sale_price")
   status           PurchaseItemStatus @default(ORDERED)
   orderedQuantity  Int                @map("ordered_quantity")
   receivedQuantity Int                @default(0) @map("received_quantity")
@@ -694,7 +719,7 @@ enum PurchaseStatus {
   IN_PROCESS
   UNDER_REVIEW
   PLANNING
-  EXPIRED
+  CALCULATION
   LAUNCH
   RECEIVED
 
@@ -709,4 +734,162 @@ enum PurchaseItemStatus {
   CANCELLED
 
   @@map("purchase_item_status")
+}
+
+// ==================== Inventory ====================
+
+model Inventory {
+  id String @id @default(uuid())
+
+  inventoryNumber String          @unique @map("inventory_number")
+  date            DateTime
+  status          InventoryStatus @default(IN_PROGRESS)
+  comment         String?
+
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
+
+  items InventoryItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([date])
+  @@index([inventoryNumber])
+  @@map("inventories")
+}
+
+model InventoryItem {
+  id String @id @default(uuid())
+
+  systemQuantity Int  @map("system_quantity")
+  actualQuantity Int? @map("actual_quantity")
+  difference     Int? @default(0)
+  comment        String?
+
+  inventoryId String    @map("inventory_id")
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  materialId String   @map("material_id")
+  material   Material @relation(fields: [materialId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([inventoryId])
+  @@index([materialId])
+  @@map("inventory_items")
+}
+
+enum InventoryStatus {
+  IN_PROGRESS
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("inventory_status")
+}
+
+// ==================== Write-offs ====================
+
+model WriteOff {
+  id String @id @default(uuid())
+
+  writeOffNumber String         @unique @map("write_off_number")
+  date           DateTime
+  status         WriteOffStatus @default(DRAFT)
+  comment        String?
+
+  totalQuantity Int   @default(0) @map("total_quantity")
+  totalAmount   Float @default(0) @map("total_amount")
+
+  completedAt     DateTime? @map("completed_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
+
+  items WriteOffItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([date])
+  @@index([writeOffNumber])
+  @@map("write_offs")
+}
+
+model WriteOffItem {
+  id String @id @default(uuid())
+
+  quantity     Int
+  weight       Float?
+  amount       Float
+  pricePerUnit Float   @map("price_per_unit")
+  comment      String?
+
+  writeOffId String   @map("write_off_id")
+  writeOff   WriteOff @relation(fields: [writeOffId], references: [id], onDelete: Cascade)
+
+  materialId String   @map("material_id")
+  material   Material @relation(fields: [materialId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([writeOffId])
+  @@index([materialId])
+  @@map("write_off_items")
+}
+
+enum WriteOffStatus {
+  DRAFT
+  PENDING
+  COMPLETED
+
+  @@map("write_off_status")
+}
+
+// ==================== Price Lists ====================
+
+model BendingPrice {
+  id String @id @default(uuid())
+
+  thickness   Float
+  coefficient Float
+  basePrice   Float   @map("base_price")
+  minPrice    Float?  @map("min_price")
+  description String?
+
+  materialItemId String?       @map("material_item_id")
+  materialItem   MaterialItem? @relation("BendingPrices", fields: [materialItemId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([thickness])
+  @@index([materialItemId])
+  @@map("bending_prices")
+}
+
+model CuttingPrice {
+  id String @id @default(uuid())
+
+  thickness     Float
+  pricePerMeter Float   @map("price_per_meter")
+  pricePerHour  Float?  @map("price_per_hour")
+  setupPrice    Float?  @map("setup_price")
+  minPrice      Float?  @map("min_price")
+  description   String?
+
+  materialItemId String?       @map("material_item_id")
+  materialItem   MaterialItem? @relation("CuttingPrices", fields: [materialItemId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([thickness])
+  @@index([materialItemId])
+  @@map("cutting_prices")
 }

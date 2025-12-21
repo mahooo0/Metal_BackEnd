@@ -37,6 +37,15 @@ export class PurchaseQueryDto {
   supplierId?: string
 
   @ApiPropertyOptional({
+    description:
+      'Filter by material item ID (purchases containing this material)',
+    example: '880e8400-e29b-41d4-a716-446655440003'
+  })
+  @IsOptional()
+  @IsUUID()
+  materialItemId?: string
+
+  @ApiPropertyOptional({
     description: 'Filter by status',
     enum: PurchaseStatus
   })

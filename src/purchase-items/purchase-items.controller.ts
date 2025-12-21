@@ -51,7 +51,10 @@ export class PurchaseItemsController {
     status: 201,
     description: 'Item added to purchase successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or material item not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or material item not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Purchase not found' })
   async create(

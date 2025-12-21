@@ -61,6 +61,7 @@ export class PurchasesService {
     const {
       search,
       supplierId,
+      materialItemId,
       status,
       dateFrom,
       dateTo,
@@ -81,6 +82,14 @@ export class PurchasesService {
 
     if (supplierId) {
       where.supplierId = supplierId
+    }
+
+    if (materialItemId) {
+      where.items = {
+        some: {
+          materialItemId: materialItemId
+        }
+      }
     }
 
     if (status) {
@@ -236,8 +245,7 @@ export class PurchasesService {
 
     if (notReadyItems.length > 0) {
       const details = notReadyItems.map(
-        item =>
-          `Item ${item.id}: status is '${item.status}', expected 'READY'`
+        item => `Item ${item.id}: status is '${item.status}', expected 'READY'`
       )
 
       throw new BadRequestException({

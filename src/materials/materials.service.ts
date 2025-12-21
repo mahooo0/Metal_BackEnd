@@ -82,7 +82,10 @@ export class MaterialsService {
     }
 
     if (sheetType) {
-      materialItemFilter.sheetType = { contains: sheetType, mode: 'insensitive' }
+      materialItemFilter.sheetType = {
+        contains: sheetType,
+        mode: 'insensitive'
+      }
       hasMaterialItemFilter = true
     }
 
@@ -102,7 +105,7 @@ export class MaterialsService {
     // Warning quantity filter - show items at or below warning threshold
     if (warningQty) {
       where.AND = [
-        { warningQty: { not: null } },
+        { warningQty: { not: null } }
         // This requires raw SQL or a workaround in Prisma
         // For now, we'll fetch and filter in memory, or use a raw query
       ]
@@ -189,7 +192,9 @@ export class MaterialsService {
       data: {
         ...rest,
         ...(priceCategories && { priceCategories: priceCategories as object }),
-        ...(materialItemId && { materialItem: { connect: { id: materialItemId } } })
+        ...(materialItemId && {
+          materialItem: { connect: { id: materialItemId } }
+        })
       },
       include: { materialItem: { include: { type: true } } }
     })

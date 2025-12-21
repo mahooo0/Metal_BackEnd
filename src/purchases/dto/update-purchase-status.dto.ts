@@ -9,7 +9,7 @@ export class UpdatePurchaseStatusDto {
       PurchaseStatus.IN_PROCESS,
       PurchaseStatus.UNDER_REVIEW,
       PurchaseStatus.PLANNING,
-      PurchaseStatus.EXPIRED,
+      PurchaseStatus.CALCULATION,
       PurchaseStatus.LAUNCH
     ],
     example: 'IN_PROCESS'
