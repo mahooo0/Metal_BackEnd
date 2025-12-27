@@ -1,14 +1,18 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
-import { PurchaseItemStatus } from '@prisma/client'
+import { Prisma, PurchaseItemStatus } from '@prisma/client'
 
 import { PrismaService } from '@/prisma/prisma.service'
+import { PurchasesService } from '@/purchases/purchases.service'
 
 import {
   CreatePurchaseItemDto,
+  PurchaseItemQueryDto,
   ReceivePurchaseItemDto,
   UpdatePurchaseItemDto,
   UpdatePurchaseItemStatusDto
@@ -16,7 +20,11 @@ import {
 
 @Injectable()
 export class PurchaseItemsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => PurchasesService))
+    private readonly purchasesService: PurchasesService
+  ) {}
 
   async create(purchaseId: string, dto: CreatePurchaseItemDto) {
     // Validate purchase exists
@@ -41,7 +49,7 @@ export class PurchaseItemsService {
 
     const { materialItemId, priceCategories, ...rest } = dto
 
-    return this.prisma.purchaseItem.create({
+    const item = await this.prisma.purchaseItem.create({
       data: {
         ...rest,
         priceCategories: priceCategories as object,
@@ -50,9 +58,16 @@ export class PurchaseItemsService {
       },
       include: { materialItem: { include: { type: true } } }
     })
+
+    // Recalculate purchase total amount
+    await this.purchasesService.recalculateTotalAmount(purchaseId)
+
+    return item
   }
 
-  async findAll(purchaseId: string, page = 1, limit = 20) {
+  async findAll(purchaseId: string, query: PurchaseItemQueryDto) {
+    const { search, page = 1, limit = 20 } = query
+
     // Validate purchase exists
     const purchase = await this.prisma.purchase.findUnique({
       where: { id: purchaseId }
@@ -64,15 +79,29 @@ export class PurchaseItemsService {
 
     const skip = (page - 1) * limit
 
+    // Build where condition
+    const where: Prisma.PurchaseItemWhereInput = { purchaseId }
+
+    // Add search filter by materialItem name, type name, or sheetType
+    if (search) {
+      where.materialItem = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { type: { name: { contains: search, mode: 'insensitive' } } },
+          { sheetType: { contains: search, mode: 'insensitive' } }
+        ]
+      }
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.purchaseItem.findMany({
-        where: { purchaseId },
+        where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: { materialItem: { include: { type: true } } }
       }),
-      this.prisma.purchaseItem.count({ where: { purchaseId } })
+      this.prisma.purchaseItem.count({ where })
     ])
 
     return {
@@ -119,7 +148,7 @@ export class PurchaseItemsService {
 
     const { materialItemId, priceCategories, ...rest } = dto
 
-    return this.prisma.purchaseItem.update({
+    const item = await this.prisma.purchaseItem.update({
       where: { id: itemId },
       data: {
         ...rest,
@@ -130,6 +159,13 @@ export class PurchaseItemsService {
       },
       include: { materialItem: { include: { type: true } } }
     })
+
+    // Recalculate purchase total amount if price or quantity changed
+    if (dto.purchasePrice !== undefined || dto.orderedQuantity !== undefined) {
+      await this.purchasesService.recalculateTotalAmount(purchaseId)
+    }
+
+    return item
   }
 
   async receive(
@@ -137,31 +173,16 @@ export class PurchaseItemsService {
     itemId: string,
     dto: ReceivePurchaseItemDto
   ) {
-    const item = await this.findOne(purchaseId, itemId)
+    await this.findOne(purchaseId, itemId)
 
-    // Calculate new received quantity
-    const newReceivedQty = item.receivedQuantity + dto.receivedQuantity
+    // SET receivedQuantity (replaces existing value)
+    const newReceivedQty = dto.receivedQuantity
 
-    // Validate not exceeding ordered quantity
-    if (newReceivedQty > item.orderedQuantity) {
-      throw new BadRequestException(
-        `Cannot receive ${dto.receivedQuantity} units. ` +
-          `Would exceed ordered quantity (${item.orderedQuantity}). ` +
-          `Currently received: ${item.receivedQuantity}`
-      )
-    }
-
-    // Determine new status based on received vs ordered
-    let newStatus: PurchaseItemStatus
-
-    if (newReceivedQty === 0) {
-      newStatus = PurchaseItemStatus.ORDERED
-    } else if (newReceivedQty < item.orderedQuantity) {
-      newStatus = PurchaseItemStatus.PARTIALLY_RECEIVED
-    } else {
-      // newReceivedQty === item.orderedQuantity
-      newStatus = PurchaseItemStatus.READY
-    }
+    // Simplified status: 0 = ORDERED, >0 = READY
+    const newStatus =
+      newReceivedQty > 0
+        ? PurchaseItemStatus.READY
+        : PurchaseItemStatus.ORDERED
 
     const updatedItem = await this.prisma.purchaseItem.update({
       where: { id: itemId },
@@ -172,15 +193,10 @@ export class PurchaseItemsService {
       include: { materialItem: { include: { type: true } } }
     })
 
-    const remaining = item.orderedQuantity - newReceivedQty
-    const isReady = newStatus === PurchaseItemStatus.READY
-
     return {
       data: updatedItem,
-      isReady,
-      message: isReady
-        ? 'Item fully received and ready for submission'
-        : `Received quantity updated. ${remaining} items remaining.`
+      isReady: newStatus === PurchaseItemStatus.READY,
+      message: `Received quantity set to ${newReceivedQty}`
     }
   }
 
@@ -202,6 +218,9 @@ export class PurchaseItemsService {
     await this.findOne(purchaseId, itemId)
 
     await this.prisma.purchaseItem.delete({ where: { id: itemId } })
+
+    // Recalculate purchase total amount
+    await this.purchasesService.recalculateTotalAmount(purchaseId)
 
     return { message: 'Purchase item deleted successfully' }
   }

@@ -55,6 +55,7 @@ export class InventoriesService {
       },
       include: {
         items: {
+          orderBy: this.itemsOrderBy,
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
           }
@@ -131,11 +132,18 @@ export class InventoriesService {
     }
   }
 
+  // Common orderBy for inventory items - items with actualQuantity first, then by material name
+  private readonly itemsOrderBy = [
+    { actualQuantity: 'desc' as const }, // NULLs last in PostgreSQL
+    { createdAt: 'asc' as const } // stable sort by creation time
+  ]
+
   async findOne(id: string) {
     const inventory = await this.prisma.inventory.findUnique({
       where: { id },
       include: {
         items: {
+          orderBy: this.itemsOrderBy,
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
           }
@@ -168,6 +176,7 @@ export class InventoriesService {
       data: dto,
       include: {
         items: {
+          orderBy: this.itemsOrderBy,
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
           }
@@ -207,17 +216,18 @@ export class InventoriesService {
     // Calculate difference
     const difference = dto.actualQuantity - item.systemQuantity
 
-    return this.prisma.inventoryItem.update({
+    // Update the item
+    await this.prisma.inventoryItem.update({
       where: { id: itemId },
       data: {
         actualQuantity: dto.actualQuantity,
         difference,
         comment: dto.comment
-      },
-      include: {
-        material: { include: { materialItem: { include: { type: true } } } }
       }
     })
+
+    // Return the full inventory with sorted items
+    return this.findOne(inventoryId)
   }
 
   async submit(id: string) {
@@ -261,6 +271,7 @@ export class InventoriesService {
       },
       include: {
         items: {
+          orderBy: this.itemsOrderBy,
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
           }
@@ -300,6 +311,10 @@ export class InventoriesService {
         },
         include: {
           items: {
+            orderBy: [
+              { actualQuantity: 'desc' },
+              { createdAt: 'asc' }
+            ],
             include: {
               material: {
                 include: { materialItem: { include: { type: true } } }
@@ -335,6 +350,7 @@ export class InventoriesService {
       },
       include: {
         items: {
+          orderBy: this.itemsOrderBy,
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
           }

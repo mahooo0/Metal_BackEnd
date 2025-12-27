@@ -1,4 +1,17 @@
-import { AuthMethod, PrismaClient, TokenType, UserStatus } from '@prisma/client'
+import {
+  AuthMethod,
+  InventoryStatus,
+  MaterialStatus,
+  OrderRequestStatus,
+  PrismaClient,
+  PurchaseItemStatus,
+  PurchaseStatus,
+  TaskStatus,
+  TimelineAction,
+  TokenType,
+  UserStatus,
+  WriteOffStatus
+} from '@prisma/client'
 import * as argon2 from 'argon2'
 import { randomUUID } from 'crypto'
 
@@ -1077,6 +1090,175 @@ const COUNTERPARTIES_DATA = [
   }
 ]
 
+// ==================== Categories Data ====================
+
+const CATEGORIES_DATA = [
+  { name: 'Нержавіюча сталь' },
+  { name: 'Вуглецева сталь' },
+  { name: 'Оцинкована сталь' },
+  { name: 'Алюміній' },
+  { name: 'Мідь' },
+  { name: 'Латунь' }
+]
+
+// ==================== Metal Brands Data ====================
+
+const METAL_BRANDS_DATA = [
+  // Нержавіюча сталь
+  { name: 'AISI 304', category: 'Нержавіюча сталь' },
+  { name: 'AISI 316', category: 'Нержавіюча сталь' },
+  { name: 'AISI 430', category: 'Нержавіюча сталь' },
+  { name: 'AISI 321', category: 'Нержавіюча сталь' },
+  // Вуглецева сталь
+  { name: 'S235JR', category: 'Вуглецева сталь' },
+  { name: 'S355J2', category: 'Вуглецева сталь' },
+  { name: 'DC01', category: 'Вуглецева сталь' },
+  { name: 'DD11', category: 'Вуглецева сталь' },
+  // Оцинкована сталь
+  { name: 'DX51D+Z', category: 'Оцинкована сталь' },
+  { name: 'DX52D+Z', category: 'Оцинкована сталь' },
+  { name: 'DX53D+Z', category: 'Оцинкована сталь' },
+  // Алюміній
+  { name: 'АМг2', category: 'Алюміній' },
+  { name: 'АМг3', category: 'Алюміній' },
+  { name: 'АД1', category: 'Алюміній' },
+  { name: '5754', category: 'Алюміній' },
+  // Мідь
+  { name: 'М1', category: 'Мідь' },
+  { name: 'М2', category: 'Мідь' },
+  // Латунь
+  { name: 'Л63', category: 'Латунь' },
+  { name: 'Л68', category: 'Латунь' }
+]
+
+// ==================== Suppliers Data ====================
+
+const SUPPLIERS_DATA = [
+  {
+    name: 'ТОВ "Метінвест Трейдинг"',
+    legalAddress: 'м. Київ, вул. Промислова, 10',
+    actualAddress: 'м. Київ, вул. Промислова, 10, склад 1',
+    bankDetails: 'IBAN UA213223130000026007233566001, АТ КБ "ПриватБанк"',
+    edrpou: '32456789',
+    ipn: '324567890123',
+    taxId: '324567890123',
+    contacts: [
+      { name: 'Олексій Сталевий', phone: '+380501111111', email: 'sales@metinvest.ua' },
+      { name: 'Марина Закупівельна', phone: '+380502222222', email: 'purchase@metinvest.ua' }
+    ]
+  },
+  {
+    name: 'ПАТ "АрселорМіттал Кривий Ріг"',
+    legalAddress: 'м. Кривий Ріг, вул. Орджонікідзе, 1',
+    actualAddress: 'м. Кривий Ріг, вул. Орджонікідзе, 1',
+    bankDetails: 'IBAN UA713052990000026001234567890, АТ "Ощадбанк"',
+    edrpou: '43567890',
+    ipn: '435678901234',
+    taxId: '435678901234',
+    contacts: [
+      { name: 'Ігор Металург', phone: '+380563333333', email: 'info@arcelormittal.ua' }
+    ]
+  },
+  {
+    name: 'ТОВ "Укрнержавійка"',
+    legalAddress: 'м. Дніпро, пр. Слобожанський, 50',
+    actualAddress: 'м. Дніпро, пр. Слобожанський, 50',
+    bankDetails: 'IBAN UA513052990000026009876543210, АТ "Укрсиббанк"',
+    edrpou: '54678901',
+    ipn: '546789012345',
+    taxId: '546789012345',
+    contacts: [
+      { name: 'Петро Нержавійко', phone: '+380564444444', email: 'nerj@ukrnerj.ua' },
+      { name: 'Оксана Логістик', phone: '+380675555555', email: 'logistic@ukrnerj.ua' },
+      { name: 'Андрій Менеджер', phone: '+380676666666', email: 'manager@ukrnerj.ua' }
+    ]
+  },
+  {
+    name: 'ФОП Алюмінієв О.В.',
+    legalAddress: 'м. Харків, вул. Металістів, 25',
+    actualAddress: 'м. Харків, вул. Металістів, 25',
+    edrpou: '2234567890',
+    ipn: '2234567890',
+    contacts: [
+      { name: 'Олег Алюмінієв', phone: '+380577777777', email: 'alu@gmail.com' }
+    ]
+  },
+  {
+    name: 'ТОВ "Мідь-Латунь Трейд"',
+    legalAddress: 'м. Одеса, вул. Морська, 15',
+    actualAddress: 'м. Одеса, вул. Морська, 15',
+    bankDetails: 'IBAN UA113052990000026001122334455, АТ "ПУМБ"',
+    edrpou: '65789012',
+    ipn: '657890123456',
+    taxId: '657890123456',
+    contacts: [
+      { name: 'Сергій Мідний', phone: '+380488888888', email: 'copper@mlt.ua' },
+      { name: 'Тетяна Латунна', phone: '+380489999999', email: 'brass@mlt.ua' }
+    ]
+  }
+]
+
+// ==================== Material Items Data ====================
+
+const MATERIAL_ITEMS_DATA = [
+  // AISI 304
+  { name: 'Лист AISI 304 1.0мм 4Н', thickness: 1.0, sheetType: '4Н', metalBrand: 'AISI 304', cuttingSupply: 100, cuttingTime: 1.5 },
+  { name: 'Лист AISI 304 1.5мм 4Н', thickness: 1.5, sheetType: '4Н', metalBrand: 'AISI 304', cuttingSupply: 120, cuttingTime: 1.8 },
+  { name: 'Лист AISI 304 2.0мм 4Н', thickness: 2.0, sheetType: '4Н', metalBrand: 'AISI 304', cuttingSupply: 150, cuttingTime: 2.2 },
+  { name: 'Лист AISI 304 3.0мм 2В', thickness: 3.0, sheetType: '2В', metalBrand: 'AISI 304', cuttingSupply: 180, cuttingTime: 3.0 },
+  // AISI 316
+  { name: 'Лист AISI 316 1.5мм 4Н', thickness: 1.5, sheetType: '4Н', metalBrand: 'AISI 316', cuttingSupply: 130, cuttingTime: 2.0 },
+  { name: 'Лист AISI 316 2.0мм 4Н', thickness: 2.0, sheetType: '4Н', metalBrand: 'AISI 316', cuttingSupply: 160, cuttingTime: 2.5 },
+  // S235JR
+  { name: 'Лист S235JR 2.0мм гарячекатаний', thickness: 2.0, sheetType: 'ГК', metalBrand: 'S235JR', cuttingSupply: 100, cuttingTime: 1.8 },
+  { name: 'Лист S235JR 3.0мм гарячекатаний', thickness: 3.0, sheetType: 'ГК', metalBrand: 'S235JR', cuttingSupply: 120, cuttingTime: 2.2 },
+  { name: 'Лист S235JR 4.0мм гарячекатаний', thickness: 4.0, sheetType: 'ГК', metalBrand: 'S235JR', cuttingSupply: 140, cuttingTime: 2.8 },
+  { name: 'Лист S235JR 5.0мм гарячекатаний', thickness: 5.0, sheetType: 'ГК', metalBrand: 'S235JR', cuttingSupply: 160, cuttingTime: 3.5 },
+  // S355J2
+  { name: 'Лист S355J2 3.0мм ГК', thickness: 3.0, sheetType: 'ГК', metalBrand: 'S355J2', cuttingSupply: 130, cuttingTime: 2.5 },
+  { name: 'Лист S355J2 6.0мм ГК', thickness: 6.0, sheetType: 'ГК', metalBrand: 'S355J2', cuttingSupply: 180, cuttingTime: 4.0 },
+  // DX51D+Z
+  { name: 'Лист DX51D+Z 0.8мм оцинк', thickness: 0.8, sheetType: 'Z100', metalBrand: 'DX51D+Z', cuttingSupply: 80, cuttingTime: 1.2 },
+  { name: 'Лист DX51D+Z 1.0мм оцинк', thickness: 1.0, sheetType: 'Z100', metalBrand: 'DX51D+Z', cuttingSupply: 90, cuttingTime: 1.4 },
+  { name: 'Лист DX51D+Z 1.5мм оцинк', thickness: 1.5, sheetType: 'Z140', metalBrand: 'DX51D+Z', cuttingSupply: 110, cuttingTime: 1.7 },
+  // Алюміній
+  { name: 'Лист АМг2 1.0мм', thickness: 1.0, sheetType: 'Н', metalBrand: 'АМг2', cuttingSupply: 60, cuttingTime: 0.8 },
+  { name: 'Лист АМг2 1.5мм', thickness: 1.5, sheetType: 'Н', metalBrand: 'АМг2', cuttingSupply: 70, cuttingTime: 1.0 },
+  { name: 'Лист АМг3 2.0мм', thickness: 2.0, sheetType: 'Н', metalBrand: 'АМг3', cuttingSupply: 80, cuttingTime: 1.2 },
+  // Мідь
+  { name: 'Лист М1 0.8мм', thickness: 0.8, sheetType: 'М', metalBrand: 'М1', cuttingSupply: 50, cuttingTime: 0.7 },
+  { name: 'Лист М1 1.0мм', thickness: 1.0, sheetType: 'М', metalBrand: 'М1', cuttingSupply: 55, cuttingTime: 0.8 },
+  // Латунь
+  { name: 'Лист Л63 1.0мм', thickness: 1.0, sheetType: 'Л', metalBrand: 'Л63', cuttingSupply: 55, cuttingTime: 0.9 },
+  { name: 'Лист Л68 1.5мм', thickness: 1.5, sheetType: 'Л', metalBrand: 'Л68', cuttingSupply: 65, cuttingTime: 1.1 }
+]
+
+// ==================== Order Types Data ====================
+
+const ORDER_TYPES_DATA = [
+  { name: 'Лазерна різка' },
+  { name: 'Гнуття металу' },
+  { name: 'Зварювання' },
+  { name: 'Комплексна обробка' },
+  { name: 'Виготовлення деталей' },
+  { name: 'Виготовлення конструкцій' },
+  { name: 'Ремонт обладнання' },
+  { name: 'Інше' }
+]
+
+// ==================== Task Types Data ====================
+
+const TASK_TYPES_DATA = [
+  { name: 'Різка' },
+  { name: 'Гнуття' },
+  { name: 'Зварювання' },
+  { name: 'Фарбування' },
+  { name: 'Збірка' },
+  { name: 'Контроль якості' },
+  { name: 'Пакування' },
+  { name: 'Доставка' }
+]
+
 const AUDIT_ACTIONS = [
   { action: 'user.login', targetType: null },
   { action: 'user.logout', targetType: null },
@@ -1688,6 +1870,689 @@ async function seedAuditLogs(
   return logsData
 }
 
+// ==================== New Module Seed Functions ====================
+
+async function seedCategories() {
+  console.log('📦 Creating categories...')
+  const categories = await Promise.all(
+    CATEGORIES_DATA.map(data =>
+      prisma.category.upsert({
+        where: { name: data.name },
+        update: {},
+        create: { name: data.name }
+      })
+    )
+  )
+  console.log(`   ✅ Created ${categories.length} categories`)
+  return categories
+}
+
+async function seedMetalBrands(categories: Awaited<ReturnType<typeof seedCategories>>) {
+  console.log('🏷️ Creating metal brands...')
+  const metalBrands = []
+
+  for (const data of METAL_BRANDS_DATA) {
+    const category = categories.find(c => c.name === data.category)
+    if (!category) {
+      console.log(`   ⚠️ Category ${data.category} not found, skipping metal brand ${data.name}`)
+      continue
+    }
+
+    const metalBrand = await prisma.metalBrand.upsert({
+      where: { name: data.name },
+      update: { categoryId: category.id },
+      create: {
+        name: data.name,
+        categoryId: category.id
+      }
+    })
+    metalBrands.push(metalBrand)
+  }
+
+  console.log(`   ✅ Created ${metalBrands.length} metal brands`)
+  return metalBrands
+}
+
+async function seedSuppliers() {
+  console.log('🏭 Creating suppliers...')
+  const suppliers = []
+
+  for (const data of SUPPLIERS_DATA) {
+    const { contacts, ...supplierData } = data
+
+    const supplier = await prisma.supplier.create({
+      data: {
+        ...supplierData,
+        contacts: {
+          create: contacts
+        }
+      },
+      include: { contacts: true }
+    })
+    suppliers.push(supplier)
+  }
+
+  console.log(`   ✅ Created ${suppliers.length} suppliers`)
+  console.log(`   ✅ Created ${suppliers.reduce((acc, s) => acc + s.contacts.length, 0)} supplier contacts`)
+  return suppliers
+}
+
+async function seedMaterialItems(metalBrands: Awaited<ReturnType<typeof seedMetalBrands>>) {
+  console.log('📋 Creating material items...')
+  const materialItems = []
+
+  for (const data of MATERIAL_ITEMS_DATA) {
+    const metalBrand = metalBrands.find(m => m.name === data.metalBrand)
+    if (!metalBrand) {
+      console.log(`   ⚠️ Metal brand ${data.metalBrand} not found, skipping ${data.name}`)
+      continue
+    }
+
+    const materialItem = await prisma.materialItem.create({
+      data: {
+        name: data.name,
+        thickness: data.thickness,
+        sheetType: data.sheetType,
+        cuttingSupply: data.cuttingSupply,
+        cuttingTime: data.cuttingTime,
+        typeId: metalBrand.id
+      }
+    })
+    materialItems.push(materialItem)
+  }
+
+  console.log(`   ✅ Created ${materialItems.length} material items`)
+  return materialItems
+}
+
+async function seedMaterials(
+  materialItems: Awaited<ReturnType<typeof seedMaterialItems>>,
+  suppliers: Awaited<ReturnType<typeof seedSuppliers>>
+) {
+  console.log('🗃️ Creating materials (inventory)...')
+  const materials = []
+
+  const statuses = [MaterialStatus.IN_PROCESS, MaterialStatus.PLANNING, MaterialStatus.CALCULATION, MaterialStatus.LAUNCH]
+  const dimensions = ['1000x2000', '1250x2500', '1500x3000', '1500x6000']
+
+  // Create 2-3 materials for each material item
+  for (const materialItem of materialItems) {
+    const count = Math.floor(Math.random() * 2) + 2 // 2-3 materials per item
+
+    for (let i = 0; i < count; i++) {
+      const supplier = suppliers[Math.floor(Math.random() * suppliers.length)]
+      const width = [1000, 1250, 1500][Math.floor(Math.random() * 3)]
+      const length = [2000, 2500, 3000, 6000][Math.floor(Math.random() * 4)]
+      const quantity = Math.floor(Math.random() * 50) + 5
+      const weight = (width / 1000) * (length / 1000) * materialItem.thickness * 7.85 * quantity
+
+      const material = await prisma.material.create({
+        data: {
+          date: randomDate(90),
+          width,
+          length,
+          dimensions: `${width}x${length}`,
+          volume: (width / 1000) * (length / 1000) * quantity,
+          weight: Math.round(weight * 100) / 100,
+          priceCategories: {
+            base: Math.round((50 + Math.random() * 100) * 100) / 100,
+            wholesale: Math.round((45 + Math.random() * 90) * 100) / 100,
+            retail: Math.round((55 + Math.random() * 110) * 100) / 100
+          },
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          quantity,
+          warningQty: Math.floor(Math.random() * 5) + 2,
+          comment: i === 0 ? 'Основний запас' : null,
+          materialItemId: materialItem.id,
+          supplierId: supplier.id
+        }
+      })
+      materials.push(material)
+    }
+  }
+
+  console.log(`   ✅ Created ${materials.length} materials`)
+  return materials
+}
+
+async function seedPurchases(
+  suppliers: Awaited<ReturnType<typeof seedSuppliers>>,
+  materialItems: Awaited<ReturnType<typeof seedMaterialItems>>
+) {
+  console.log('🛒 Creating purchases...')
+  const purchases = []
+
+  const statuses = [PurchaseStatus.IN_PROCESS, PurchaseStatus.PLANNING, PurchaseStatus.CALCULATION, PurchaseStatus.RECEIVED]
+
+  // Create 8-10 purchases
+  for (let i = 0; i < 10; i++) {
+    const supplier = suppliers[Math.floor(Math.random() * suppliers.length)]
+    const status = statuses[Math.floor(Math.random() * statuses.length)]
+    const purchaseDate = randomDate(60)
+
+    const purchase = await prisma.purchase.create({
+      data: {
+        date: purchaseDate,
+        purchaseId: `PO-${String(2024000 + i + 1).padStart(7, '0')}`,
+        status,
+        comment: i % 3 === 0 ? 'Терміново' : null,
+        supplierId: supplier.id
+      }
+    })
+
+    // Add 2-5 items to each purchase
+    const itemCount = Math.floor(Math.random() * 4) + 2
+    let totalAmount = 0
+
+    for (let j = 0; j < itemCount; j++) {
+      const materialItem = materialItems[Math.floor(Math.random() * materialItems.length)]
+      const width = [1000, 1250, 1500][Math.floor(Math.random() * 3)]
+      const length = [2000, 2500, 3000][Math.floor(Math.random() * 3)]
+      const orderedQty = Math.floor(Math.random() * 20) + 5
+      const purchasePrice = Math.round((40 + Math.random() * 80) * 100) / 100
+      const salePrice = Math.round(purchasePrice * 1.3 * 100) / 100
+      const receivedQty = status === PurchaseStatus.RECEIVED ? orderedQty :
+                         (status === PurchaseStatus.IN_PROCESS ? Math.floor(orderedQty / 2) : 0)
+
+      const itemStatus = receivedQty === orderedQty ? PurchaseItemStatus.RECEIVED :
+                        (receivedQty > 0 ? PurchaseItemStatus.PARTIALLY_RECEIVED : PurchaseItemStatus.ORDERED)
+
+      await prisma.purchaseItem.create({
+        data: {
+          date: purchaseDate,
+          width,
+          length,
+          dimensions: `${width}x${length}`,
+          volume: (width / 1000) * (length / 1000) * orderedQty,
+          weight: (width / 1000) * (length / 1000) * materialItem.thickness * 7.85 * orderedQty,
+          priceCategories: { base: purchasePrice, sale: salePrice },
+          purchasePrice,
+          salePrice,
+          status: itemStatus,
+          orderedQuantity: orderedQty,
+          receivedQuantity: receivedQty,
+          warningQty: 3,
+          purchaseId: purchase.id,
+          materialItemId: materialItem.id
+        }
+      })
+
+      totalAmount += purchasePrice * orderedQty
+    }
+
+    // Update total amount
+    await prisma.purchase.update({
+      where: { id: purchase.id },
+      data: { totalAmount: Math.round(totalAmount * 100) / 100 }
+    })
+
+    purchases.push({ ...purchase, totalAmount })
+  }
+
+  console.log(`   ✅ Created ${purchases.length} purchases with items`)
+  return purchases
+}
+
+async function seedInventories(materials: Awaited<ReturnType<typeof seedMaterials>>) {
+  console.log('📊 Creating inventories...')
+  const inventories = []
+
+  const statuses = [InventoryStatus.IN_PROGRESS, InventoryStatus.PENDING, InventoryStatus.APPROVED, InventoryStatus.REJECTED]
+
+  // Create 5 inventories
+  for (let i = 0; i < 5; i++) {
+    const status = statuses[i % statuses.length]
+    const inventoryDate = randomDate(30 * (i + 1))
+
+    const inventory = await prisma.inventory.create({
+      data: {
+        inventoryNumber: `INV-${String(2024000 + i + 1).padStart(7, '0')}`,
+        date: inventoryDate,
+        status,
+        comment: i === 0 ? 'Планова інвентаризація Q4' : (i === 2 ? 'Позапланова перевірка' : null),
+        approvedAt: status === InventoryStatus.APPROVED ? new Date() : null,
+        rejectedAt: status === InventoryStatus.REJECTED ? new Date() : null,
+        rejectionReason: status === InventoryStatus.REJECTED ? 'Виявлено розбіжності, потрібна додаткова перевірка' : null
+      }
+    })
+
+    // Add 5-10 inventory items
+    const itemCount = Math.floor(Math.random() * 6) + 5
+    const selectedMaterials = [...materials].sort(() => Math.random() - 0.5).slice(0, itemCount)
+
+    for (const material of selectedMaterials) {
+      const systemQty = material.quantity
+      const actualQty = status === InventoryStatus.IN_PROGRESS ? null :
+                       (Math.random() > 0.8 ? systemQty + Math.floor(Math.random() * 3) - 1 : systemQty)
+
+      await prisma.inventoryItem.create({
+        data: {
+          systemQuantity: systemQty,
+          actualQuantity: actualQty,
+          difference: actualQty !== null ? actualQty - systemQty : 0,
+          comment: actualQty !== null && actualQty !== systemQty ? 'Потрібна перевірка' : null,
+          inventoryId: inventory.id,
+          materialId: material.id
+        }
+      })
+    }
+
+    inventories.push(inventory)
+  }
+
+  console.log(`   ✅ Created ${inventories.length} inventories with items`)
+  return inventories
+}
+
+async function seedWriteOffs(materials: Awaited<ReturnType<typeof seedMaterials>>) {
+  console.log('📉 Creating write-offs...')
+  const writeOffs = []
+
+  const statuses = [WriteOffStatus.DRAFT, WriteOffStatus.PENDING, WriteOffStatus.COMPLETED]
+  const reasons = ['Брак', 'Пошкодження при транспортуванні', 'Виробничі відходи', 'Списання залишків']
+
+  // Create 4 write-offs
+  for (let i = 0; i < 4; i++) {
+    const status = statuses[i % statuses.length]
+    const writeOffDate = randomDate(45)
+
+    const writeOff = await prisma.writeOff.create({
+      data: {
+        writeOffNumber: `WO-${String(2024000 + i + 1).padStart(7, '0')}`,
+        date: writeOffDate,
+        status,
+        comment: reasons[i % reasons.length],
+        completedAt: status === WriteOffStatus.COMPLETED ? new Date() : null
+      }
+    })
+
+    // Add 2-4 write-off items
+    const itemCount = Math.floor(Math.random() * 3) + 2
+    const selectedMaterials = [...materials].sort(() => Math.random() - 0.5).slice(0, itemCount)
+
+    let totalQty = 0
+    let totalAmount = 0
+
+    for (const material of selectedMaterials) {
+      const qty = Math.floor(Math.random() * 3) + 1
+      const pricePerUnit = 50 + Math.random() * 100
+      const amount = qty * pricePerUnit
+
+      await prisma.writeOffItem.create({
+        data: {
+          quantity: qty,
+          weight: (material.weight || 10) / (material.quantity || 1) * qty,
+          amount: Math.round(amount * 100) / 100,
+          pricePerUnit: Math.round(pricePerUnit * 100) / 100,
+          comment: reasons[Math.floor(Math.random() * reasons.length)],
+          writeOffId: writeOff.id,
+          materialId: material.id
+        }
+      })
+
+      totalQty += qty
+      totalAmount += amount
+    }
+
+    // Update totals
+    await prisma.writeOff.update({
+      where: { id: writeOff.id },
+      data: {
+        totalQuantity: totalQty,
+        totalAmount: Math.round(totalAmount * 100) / 100
+      }
+    })
+
+    writeOffs.push(writeOff)
+  }
+
+  console.log(`   ✅ Created ${writeOffs.length} write-offs with items`)
+  return writeOffs
+}
+
+async function seedPriceLists(materialItems: Awaited<ReturnType<typeof seedMaterialItems>>) {
+  console.log('💰 Creating price lists...')
+
+  // Bending prices for different thicknesses
+  const bendingPrices = []
+  const thicknesses = [0.8, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+  for (const thickness of thicknesses) {
+    const basePrice = 10 + thickness * 5
+    const coefficient = 1 + thickness * 0.1
+
+    // General bending price (not linked to specific material)
+    const bendingPrice = await prisma.bendingPrice.create({
+      data: {
+        thickness,
+        coefficient: Math.round(coefficient * 100) / 100,
+        basePrice: Math.round(basePrice * 100) / 100,
+        minPrice: Math.round(basePrice * 0.8 * 100) / 100,
+        description: `Гнуття листа ${thickness}мм`
+      }
+    })
+    bendingPrices.push(bendingPrice)
+  }
+
+  // Also add some material-specific bending prices
+  for (let i = 0; i < 5; i++) {
+    const materialItem = materialItems[i]
+    if (materialItem) {
+      const basePrice = 12 + materialItem.thickness * 6
+      await prisma.bendingPrice.create({
+        data: {
+          thickness: materialItem.thickness,
+          coefficient: 1.2,
+          basePrice: Math.round(basePrice * 100) / 100,
+          minPrice: Math.round(basePrice * 0.75 * 100) / 100,
+          description: `Спеціальна ціна для ${materialItem.name}`,
+          materialItemId: materialItem.id
+        }
+      })
+    }
+  }
+
+  // Cutting prices for different thicknesses
+  const cuttingPrices = []
+
+  for (const thickness of thicknesses) {
+    const pricePerMeter = 20 + thickness * 10
+    const pricePerHour = 500 + thickness * 100
+
+    const cuttingPrice = await prisma.cuttingPrice.create({
+      data: {
+        thickness,
+        pricePerMeter: Math.round(pricePerMeter * 100) / 100,
+        pricePerHour: Math.round(pricePerHour * 100) / 100,
+        setupPrice: 150,
+        minPrice: Math.round(pricePerMeter * 0.5 * 100) / 100,
+        description: `Різка листа ${thickness}мм`
+      }
+    })
+    cuttingPrices.push(cuttingPrice)
+  }
+
+  // Material-specific cutting prices
+  for (let i = 0; i < 5; i++) {
+    const materialItem = materialItems[i]
+    if (materialItem) {
+      const pricePerMeter = 25 + materialItem.thickness * 12
+      await prisma.cuttingPrice.create({
+        data: {
+          thickness: materialItem.thickness,
+          pricePerMeter: Math.round(pricePerMeter * 100) / 100,
+          pricePerHour: 600,
+          setupPrice: 100,
+          minPrice: 50,
+          description: `Спеціальна ціна для ${materialItem.name}`,
+          materialItemId: materialItem.id
+        }
+      })
+    }
+  }
+
+  console.log(`   ✅ Created ${bendingPrices.length} general bending prices + 5 material-specific`)
+  console.log(`   ✅ Created ${cuttingPrices.length} general cutting prices + 5 material-specific`)
+  return { bendingPrices, cuttingPrices }
+}
+
+async function seedOrderTypes() {
+  console.log('📑 Creating order types...')
+  const orderTypes = await Promise.all(
+    ORDER_TYPES_DATA.map(data =>
+      prisma.orderType.upsert({
+        where: { name: data.name },
+        update: {},
+        create: { name: data.name }
+      })
+    )
+  )
+  console.log(`   ✅ Created ${orderTypes.length} order types`)
+  return orderTypes
+}
+
+async function seedTaskTypes() {
+  console.log('🔧 Creating task types...')
+  const taskTypes = await Promise.all(
+    TASK_TYPES_DATA.map(data =>
+      prisma.taskType.upsert({
+        where: { name: data.name },
+        update: {},
+        create: { name: data.name }
+      })
+    )
+  )
+  console.log(`   ✅ Created ${taskTypes.length} task types`)
+  return taskTypes
+}
+
+async function seedOrderRequests(
+  orderTypes: Awaited<ReturnType<typeof seedOrderTypes>>,
+  counterparties: Awaited<ReturnType<typeof seedCounterparties>>,
+  users: Awaited<ReturnType<typeof seedUsers>>
+) {
+  console.log('📝 Creating order requests...')
+  const orderRequests = []
+
+  const managers = users.filter(u => u.role === SystemRole.MANAGER && u.status === UserStatus.ACTIVE)
+  const statuses = [OrderRequestStatus.NEW_ORDER, OrderRequestStatus.CALCULATION, OrderRequestStatus.CLARIFICATION, OrderRequestStatus.EXTRA_SERVICES]
+
+  const requestTitles = [
+    'Різка листового металу для огорожі',
+    'Виготовлення деталей для вентиляції',
+    'Лазерна різка нержавіючої сталі',
+    'Гнуття профілю для меблів',
+    'Комплексна обробка алюмінію',
+    'Виготовлення кронштейнів',
+    'Різка оцинкованого листа',
+    'Виготовлення корпусів обладнання',
+    'Зварювання конструкцій',
+    'Виробництво елементів фасаду',
+    'Різка міді для електротехніки',
+    'Виготовлення рекламних конструкцій'
+  ]
+
+  for (let i = 0; i < 12; i++) {
+    const orderType = orderTypes[Math.floor(Math.random() * orderTypes.length)]
+    const counterparty = Math.random() > 0.2 ? counterparties[Math.floor(Math.random() * counterparties.length)] : null
+    const manager = managers[Math.floor(Math.random() * managers.length)]
+    const status = statuses[Math.floor(Math.random() * statuses.length)]
+    const startTime = randomDate(30)
+    const endTime = futureDate(Math.floor(Math.random() * 14) + 7)
+
+    const orderRequest = await prisma.orderRequest.create({
+      data: {
+        title: requestTitles[i],
+        description: `Детальний опис замовлення: ${requestTitles[i]}. Терміни виконання згідно договору.`,
+        indexLike: `OR-${String(2024000 + i + 1).padStart(7, '0')}`,
+        status,
+        startTime,
+        endTime,
+        orderTypeId: orderType.id,
+        counterpartyId: counterparty?.id || null,
+        createdById: manager.id
+      }
+    })
+
+    // Add 1-3 comments
+    const commentCount = Math.floor(Math.random() * 3) + 1
+    for (let j = 0; j < commentCount; j++) {
+      const author = users[Math.floor(Math.random() * users.length)]
+      await prisma.orderRequestComment.create({
+        data: {
+          text: j === 0 ? 'Замовлення прийнято в роботу' :
+                (j === 1 ? 'Уточнення розмірів отримано' : 'Матеріал в наявності'),
+          authorId: author.id,
+          orderRequestId: orderRequest.id,
+          createdAt: randomDate(7)
+        }
+      })
+    }
+
+    // Add 0-2 files
+    const fileCount = Math.floor(Math.random() * 3)
+    for (let j = 0; j < fileCount; j++) {
+      await prisma.orderRequestFile.create({
+        data: {
+          fileName: j === 0 ? 'Креслення.pdf' : (j === 1 ? 'Специфікація.xlsx' : 'Фото.jpg'),
+          filePath: `/uploads/orders/${orderRequest.id}/file_${j + 1}.${j === 0 ? 'pdf' : (j === 1 ? 'xlsx' : 'jpg')}`,
+          fileSize: Math.floor(Math.random() * 1000000) + 100000,
+          mimeType: j === 0 ? 'application/pdf' : (j === 1 ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'image/jpeg'),
+          orderRequestId: orderRequest.id
+        }
+      })
+    }
+
+    orderRequests.push(orderRequest)
+  }
+
+  console.log(`   ✅ Created ${orderRequests.length} order requests with comments and files`)
+  return orderRequests
+}
+
+async function seedTasks(
+  taskTypes: Awaited<ReturnType<typeof seedTaskTypes>>,
+  orderRequests: Awaited<ReturnType<typeof seedOrderRequests>>,
+  users: Awaited<ReturnType<typeof seedUsers>>
+) {
+  console.log('✅ Creating tasks...')
+  const tasks = []
+
+  const technicians = users.filter(u => u.role === SystemRole.TECHNICAL && u.status === UserStatus.ACTIVE)
+  const allActiveUsers = users.filter(u => u.status === UserStatus.ACTIVE)
+  const statuses = [TaskStatus.PLANNING, TaskStatus.BACKLOG, TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE]
+
+  const taskTitles = [
+    'Підготовка матеріалу',
+    'Лазерна різка',
+    'Гнуття деталей',
+    'Зварювання',
+    'Контроль якості',
+    'Пакування',
+    'Підготовка до відправки'
+  ]
+
+  // Create 2-4 tasks for each order request
+  for (const orderRequest of orderRequests) {
+    const taskCount = Math.floor(Math.random() * 3) + 2
+
+    for (let i = 0; i < taskCount; i++) {
+      const taskType = taskTypes[Math.floor(Math.random() * taskTypes.length)]
+      const creator = allActiveUsers[Math.floor(Math.random() * allActiveUsers.length)]
+      const responsible = Math.random() > 0.3 ? technicians[Math.floor(Math.random() * technicians.length)] : null
+      const status = statuses[Math.floor(Math.random() * statuses.length)]
+
+      const startDate = randomDate(14)
+      const startTime = new Date(startDate)
+      startTime.setHours(9, 0, 0, 0)
+      const endTime = new Date(startDate)
+      endTime.setHours(17, 0, 0, 0)
+
+      const task = await prisma.task.create({
+        data: {
+          title: taskTitles[i % taskTitles.length],
+          description: `${taskTitles[i % taskTitles.length]} для замовлення ${orderRequest.indexLike}`,
+          status,
+          startExecutionDate: startDate,
+          startTime,
+          endTime,
+          taskTypeId: taskType.id,
+          orderRequestId: orderRequest.id,
+          createdById: creator.id,
+          responsibleUserId: responsible?.id || null
+        }
+      })
+
+      // Add 0-2 comments
+      const commentCount = Math.floor(Math.random() * 3)
+      for (let j = 0; j < commentCount; j++) {
+        const author = allActiveUsers[Math.floor(Math.random() * allActiveUsers.length)]
+        await prisma.taskComment.create({
+          data: {
+            text: j === 0 ? 'Завдання розпочато' : 'Прогрес: 50% виконано',
+            authorId: author.id,
+            taskId: task.id,
+            createdAt: randomDate(3)
+          }
+        })
+      }
+
+      // Add timeline items for in_progress or done tasks
+      if (status === TaskStatus.IN_PROGRESS || status === TaskStatus.DONE) {
+        await prisma.taskTimelineItem.create({
+          data: {
+            actionName: TimelineAction.START,
+            time: randomDate(5),
+            taskId: task.id
+          }
+        })
+
+        if (status === TaskStatus.DONE) {
+          await prisma.taskTimelineItem.create({
+            data: {
+              actionName: TimelineAction.END,
+              time: randomDate(1),
+              taskId: task.id
+            }
+          })
+        }
+      }
+
+      tasks.push(task)
+    }
+  }
+
+  console.log(`   ✅ Created ${tasks.length} tasks with comments, files, and timeline`)
+  return tasks
+}
+
+async function seedPlanRecords(
+  metalBrands: Awaited<ReturnType<typeof seedMetalBrands>>,
+  users: Awaited<ReturnType<typeof seedUsers>>
+) {
+  console.log('📅 Creating plan records...')
+  const planRecords = []
+
+  const technicians = users.filter(u => u.role === SystemRole.TECHNICAL && u.status === UserStatus.ACTIVE)
+  const customers = ['ТОВ "СтальКонструкція"', 'ПП "Металобудова"', 'ФОП Іваненко', 'ТОВ "Промтех"', 'ПАТ "Енергомаш"']
+
+  for (let i = 0; i < 15; i++) {
+    const metalBrand = metalBrands[Math.floor(Math.random() * metalBrands.length)]
+    const creator = technicians[Math.floor(Math.random() * technicians.length)]
+    const regDate = randomDate(60)
+
+    const planRecord = await prisma.planRecord.create({
+      data: {
+        registrationDate: regDate,
+        planNumber: `PLAN-${String(2024000 + i + 1).padStart(7, '0')}`,
+        orderNumber: `ORD-${String(Math.floor(Math.random() * 1000) + 100).padStart(4, '0')}`,
+        customer: customers[Math.floor(Math.random() * customers.length)],
+        metalThickness: [1.0, 1.5, 2.0, 3.0, 4.0, 5.0][Math.floor(Math.random() * 6)],
+        metalBrandId: metalBrand.id,
+        createdById: creator.id
+      }
+    })
+
+    // Add 0-2 files
+    const fileCount = Math.floor(Math.random() * 3)
+    for (let j = 0; j < fileCount; j++) {
+      await prisma.planRecordFile.create({
+        data: {
+          fileName: j === 0 ? 'План_раскроя.dxf' : (j === 1 ? 'Специфікація.pdf' : 'Ескіз.png'),
+          filePath: `/uploads/plans/${planRecord.id}/file_${j + 1}.${j === 0 ? 'dxf' : (j === 1 ? 'pdf' : 'png')}`,
+          fileSize: Math.floor(Math.random() * 500000) + 50000,
+          planRecordId: planRecord.id
+        }
+      })
+    }
+
+    planRecords.push(planRecord)
+  }
+
+  console.log(`   ✅ Created ${planRecords.length} plan records with files`)
+  return planRecords
+}
+
 // ==================== Main ====================
 
 async function main() {
@@ -1708,7 +2573,24 @@ async function main() {
   await prisma.taskType.deleteMany()
   await prisma.planRecordFile.deleteMany()
   await prisma.planRecord.deleteMany()
+
+  // Warehouse modules - must be deleted before MetalBrand due to foreign key constraints
+  await prisma.bendingPrice.deleteMany()
+  await prisma.cuttingPrice.deleteMany()
+  await prisma.inventoryItem.deleteMany()
+  await prisma.writeOffItem.deleteMany()
+  await prisma.inventory.deleteMany()
+  await prisma.writeOff.deleteMany()
+  await prisma.material.deleteMany()
+  await prisma.purchaseItem.deleteMany()
+  await prisma.purchase.deleteMany()
+  await prisma.supplierContact.deleteMany()
+  await prisma.supplier.deleteMany()
+  await prisma.materialItem.deleteMany()
+
   await prisma.metalBrand.deleteMany()
+  await prisma.category.deleteMany()
+
   await prisma.orderRequestFile.deleteMany()
   await prisma.orderRequestComment.deleteMany()
   await prisma.orderRequest.deleteMany()
@@ -1729,7 +2611,7 @@ async function main() {
   console.log('   ✅ Database cleaned')
   console.log('')
 
-  // Seed in order
+  // Seed in order - Core modules
   const roles = await seedRoles()
   console.log('')
 
@@ -1751,11 +2633,57 @@ async function main() {
   const counterparties = await seedCounterparties()
   console.log('')
 
+  // Seed warehouse/materials modules
+  const categories = await seedCategories()
+  console.log('')
+
+  const metalBrands = await seedMetalBrands(categories)
+  console.log('')
+
+  const suppliers = await seedSuppliers()
+  console.log('')
+
+  const materialItems = await seedMaterialItems(metalBrands)
+  console.log('')
+
+  const materials = await seedMaterials(materialItems, suppliers)
+  console.log('')
+
+  await seedPurchases(suppliers, materialItems)
+  console.log('')
+
+  await seedInventories(materials)
+  console.log('')
+
+  await seedWriteOffs(materials)
+  console.log('')
+
+  await seedPriceLists(materialItems)
+  console.log('')
+
+  // Seed CRM/Order modules
+  const orderTypes = await seedOrderTypes()
+  console.log('')
+
+  const taskTypes = await seedTaskTypes()
+  console.log('')
+
+  const orderRequests = await seedOrderRequests(orderTypes, counterparties, users)
+  console.log('')
+
+  await seedTasks(taskTypes, orderRequests, users)
+  console.log('')
+
+  await seedPlanRecords(metalBrands, users)
+  console.log('')
+
+  // Seed audit logs last
   await seedAuditLogs(users, counterparties)
   console.log('')
 
   // Summary
   const stats = {
+    // Core
     roles: await prisma.role.count(),
     users: await prisma.user.count(),
     accounts: await prisma.account.count(),
@@ -1765,6 +2693,32 @@ async function main() {
     counterparties: await prisma.counterparty.count(),
     contacts: await prisma.contact.count(),
     documents: await prisma.document.count(),
+    // Warehouse
+    categories: await prisma.category.count(),
+    metalBrands: await prisma.metalBrand.count(),
+    suppliers: await prisma.supplier.count(),
+    supplierContacts: await prisma.supplierContact.count(),
+    materialItems: await prisma.materialItem.count(),
+    materials: await prisma.material.count(),
+    purchases: await prisma.purchase.count(),
+    purchaseItems: await prisma.purchaseItem.count(),
+    inventories: await prisma.inventory.count(),
+    inventoryItems: await prisma.inventoryItem.count(),
+    writeOffs: await prisma.writeOff.count(),
+    writeOffItems: await prisma.writeOffItem.count(),
+    bendingPrices: await prisma.bendingPrice.count(),
+    cuttingPrices: await prisma.cuttingPrice.count(),
+    // CRM
+    orderTypes: await prisma.orderType.count(),
+    taskTypes: await prisma.taskType.count(),
+    orderRequests: await prisma.orderRequest.count(),
+    orderRequestComments: await prisma.orderRequestComment.count(),
+    orderRequestFiles: await prisma.orderRequestFile.count(),
+    tasks: await prisma.task.count(),
+    taskComments: await prisma.taskComment.count(),
+    taskTimeline: await prisma.taskTimelineItem.count(),
+    planRecords: await prisma.planRecord.count(),
+    planRecordFiles: await prisma.planRecordFile.count(),
     auditLogs: await prisma.auditLog.count()
   }
 
@@ -1773,39 +2727,57 @@ async function main() {
   console.log('🎉 ═══════════════════════════════════════════════════════════')
   console.log('')
   console.log('📊 DATABASE STATISTICS:')
+  console.log('')
+  console.log('   📁 CORE MODULES:')
   console.log('   ┌────────────────────────┬──────────┐')
   console.log('   │ Table                  │ Records  │')
   console.log('   ├────────────────────────┼──────────┤')
-  console.log(
-    `   │ Roles                  │ ${String(stats.roles).padStart(8)} │`
-  )
-  console.log(
-    `   │ Users                  │ ${String(stats.users).padStart(8)} │`
-  )
-  console.log(
-    `   │ OAuth Accounts         │ ${String(stats.accounts).padStart(8)} │`
-  )
-  console.log(
-    `   │ Tokens                 │ ${String(stats.tokens).padStart(8)} │`
-  )
-  console.log(
-    `   │ Password History       │ ${String(stats.passwordHistory).padStart(8)} │`
-  )
-  console.log(
-    `   │ User Comments          │ ${String(stats.userComments).padStart(8)} │`
-  )
-  console.log(
-    `   │ Counterparties         │ ${String(stats.counterparties).padStart(8)} │`
-  )
-  console.log(
-    `   │ Contacts               │ ${String(stats.contacts).padStart(8)} │`
-  )
-  console.log(
-    `   │ Documents              │ ${String(stats.documents).padStart(8)} │`
-  )
-  console.log(
-    `   │ Audit Logs             │ ${String(stats.auditLogs).padStart(8)} │`
-  )
+  console.log(`   │ Roles                  │ ${String(stats.roles).padStart(8)} │`)
+  console.log(`   │ Users                  │ ${String(stats.users).padStart(8)} │`)
+  console.log(`   │ OAuth Accounts         │ ${String(stats.accounts).padStart(8)} │`)
+  console.log(`   │ Tokens                 │ ${String(stats.tokens).padStart(8)} │`)
+  console.log(`   │ Password History       │ ${String(stats.passwordHistory).padStart(8)} │`)
+  console.log(`   │ User Comments          │ ${String(stats.userComments).padStart(8)} │`)
+  console.log(`   │ Counterparties         │ ${String(stats.counterparties).padStart(8)} │`)
+  console.log(`   │ Contacts               │ ${String(stats.contacts).padStart(8)} │`)
+  console.log(`   │ Documents              │ ${String(stats.documents).padStart(8)} │`)
+  console.log(`   │ Audit Logs             │ ${String(stats.auditLogs).padStart(8)} │`)
+  console.log('   └────────────────────────┴──────────┘')
+  console.log('')
+  console.log('   🏭 WAREHOUSE MODULES:')
+  console.log('   ┌────────────────────────┬──────────┐')
+  console.log('   │ Table                  │ Records  │')
+  console.log('   ├────────────────────────┼──────────┤')
+  console.log(`   │ Categories             │ ${String(stats.categories).padStart(8)} │`)
+  console.log(`   │ Metal Brands           │ ${String(stats.metalBrands).padStart(8)} │`)
+  console.log(`   │ Suppliers              │ ${String(stats.suppliers).padStart(8)} │`)
+  console.log(`   │ Supplier Contacts      │ ${String(stats.supplierContacts).padStart(8)} │`)
+  console.log(`   │ Material Items         │ ${String(stats.materialItems).padStart(8)} │`)
+  console.log(`   │ Materials              │ ${String(stats.materials).padStart(8)} │`)
+  console.log(`   │ Purchases              │ ${String(stats.purchases).padStart(8)} │`)
+  console.log(`   │ Purchase Items         │ ${String(stats.purchaseItems).padStart(8)} │`)
+  console.log(`   │ Inventories            │ ${String(stats.inventories).padStart(8)} │`)
+  console.log(`   │ Inventory Items        │ ${String(stats.inventoryItems).padStart(8)} │`)
+  console.log(`   │ Write-offs             │ ${String(stats.writeOffs).padStart(8)} │`)
+  console.log(`   │ Write-off Items        │ ${String(stats.writeOffItems).padStart(8)} │`)
+  console.log(`   │ Bending Prices         │ ${String(stats.bendingPrices).padStart(8)} │`)
+  console.log(`   │ Cutting Prices         │ ${String(stats.cuttingPrices).padStart(8)} │`)
+  console.log('   └────────────────────────┴──────────┘')
+  console.log('')
+  console.log('   📋 CRM MODULES:')
+  console.log('   ┌────────────────────────┬──────────┐')
+  console.log('   │ Table                  │ Records  │')
+  console.log('   ├────────────────────────┼──────────┤')
+  console.log(`   │ Order Types            │ ${String(stats.orderTypes).padStart(8)} │`)
+  console.log(`   │ Order Requests         │ ${String(stats.orderRequests).padStart(8)} │`)
+  console.log(`   │ Order Comments         │ ${String(stats.orderRequestComments).padStart(8)} │`)
+  console.log(`   │ Order Files            │ ${String(stats.orderRequestFiles).padStart(8)} │`)
+  console.log(`   │ Task Types             │ ${String(stats.taskTypes).padStart(8)} │`)
+  console.log(`   │ Tasks                  │ ${String(stats.tasks).padStart(8)} │`)
+  console.log(`   │ Task Comments          │ ${String(stats.taskComments).padStart(8)} │`)
+  console.log(`   │ Task Timeline          │ ${String(stats.taskTimeline).padStart(8)} │`)
+  console.log(`   │ Plan Records           │ ${String(stats.planRecords).padStart(8)} │`)
+  console.log(`   │ Plan Files             │ ${String(stats.planRecordFiles).padStart(8)} │`)
   console.log('   └────────────────────────┴──────────┘')
   console.log('')
   console.log('🔑 TEST ACCOUNTS:')

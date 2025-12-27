@@ -3,11 +3,10 @@ import { IsInt, Min } from 'class-validator'
 
 export class ReceivePurchaseItemDto {
   @ApiProperty({
-    description:
-      'Quantity to receive (will be added to existing receivedQuantity)',
+    description: 'Received quantity (replaces the existing value)',
     example: 5
   })
   @IsInt()
-  @Min(1)
+  @Min(0)
   receivedQuantity: number
 }

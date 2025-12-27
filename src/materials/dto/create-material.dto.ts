@@ -35,6 +35,14 @@ export class CreateMaterialDto {
   materialItemId: string
 
   @ApiProperty({
+    description: 'Supplier ID (UUID)',
+    example: '550e8400-e29b-41d4-a716-446655440001'
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  supplierId: string
+
+  @ApiProperty({
     description: 'Width in mm',
     example: 56
   })

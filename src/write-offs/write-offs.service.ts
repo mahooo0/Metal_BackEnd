@@ -34,6 +34,7 @@ export class WriteOffsService {
       )
     }
 
+    // Create write-off without items (items are added manually)
     return this.prisma.writeOff.create({
       data: {
         writeOffNumber: dto.writeOffNumber,
@@ -127,7 +128,11 @@ export class WriteOffsService {
         items: {
           include: {
             material: { include: { materialItem: { include: { type: true } } } }
-          }
+          },
+          orderBy: [
+            { quantity: 'desc' }, // Items with quantity > 0 first
+            { createdAt: 'asc' } // Then by creation order
+          ]
         }
       }
     })
@@ -314,16 +319,19 @@ export class WriteOffsService {
       )
     }
 
-    // Check that there's at least one item
-    if (writeOff.items.length === 0) {
+    // Filter items with quantity > 0 (items to actually write off)
+    const itemsToWriteOff = writeOff.items.filter(item => item.quantity > 0)
+
+    // Check that there's at least one item with quantity > 0
+    if (itemsToWriteOff.length === 0) {
       throw new BadRequestException(
-        'Cannot submit write-off without items. Add at least one item.'
+        'Cannot submit write-off without items. Add quantity to at least one item.'
       )
     }
 
     // Check all materials have sufficient quantity
     const insufficientItems: string[] = []
-    for (const item of writeOff.items) {
+    for (const item of itemsToWriteOff) {
       if (item.material.quantity < item.quantity) {
         insufficientItems.push(
           `${item.material.materialItem.name}: has ${item.material.quantity}, needs ${item.quantity}`
@@ -368,10 +376,13 @@ export class WriteOffsService {
       )
     }
 
+    // Filter items with quantity > 0
+    const itemsToWriteOff = writeOff.items.filter(item => item.quantity > 0)
+
     // Use transaction to update materials and write-off
     return this.prisma.$transaction(async tx => {
-      // Update each material's quantity
-      for (const item of writeOff.items) {
+      // Update each material's quantity (only items with quantity > 0)
+      for (const item of itemsToWriteOff) {
         await tx.material.update({
           where: { id: item.materialId },
           data: { quantity: { decrement: item.quantity } }
@@ -398,7 +409,7 @@ export class WriteOffsService {
 
       return {
         data: updatedWriteOff,
-        message: `Write-off approved. ${writeOff.items.length} material(s) updated. Total: ${writeOff.totalQuantity} units, ${writeOff.totalAmount} amount.`
+        message: `Write-off approved. ${itemsToWriteOff.length} material(s) updated. Total: ${writeOff.totalQuantity} units, ${writeOff.totalAmount} amount.`
       }
     })
   }
