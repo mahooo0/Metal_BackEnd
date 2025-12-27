@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { RedisStore } from 'connect-redis'
 import * as cookieParser from 'cookie-parser'
 import * as session from 'express-session'
+import helmet from 'helmet'
 import IORedis from 'ioredis'
 
 import { AppModule } from '@/app.module'
@@ -17,11 +18,23 @@ async function bootstrap() {
   const config = app.get(ConfigService)
   const redis = new IORedis(config.getOrThrow('REDIS_URI'))
 
+  // Security headers with relaxed policy for development
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+      referrerPolicy: { policy: 'origin-when-cross-origin' },
+      contentSecurityPolicy: false // Disable for development
+    })
+  )
+
   app.use(cookieParser(config.getOrThrow<string>('COOKIES_SECRET')))
 
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true
     })
   )
 
@@ -46,9 +59,25 @@ async function bootstrap() {
   )
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ],
     credentials: true,
-    exposedHeaders: ['set-cookie']
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers'
+    ],
+    exposedHeaders: ['set-cookie', 'Set-Cookie']
   })
 
   const swaggerConfig = new DocumentBuilder()

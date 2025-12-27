@@ -25,6 +25,31 @@ import {
 export class PurchasesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Recalculates and updates the totalAmount of a purchase
+   * based on the sum of (purchasePrice * orderedQuantity) for all items
+   */
+  async recalculateTotalAmount(purchaseId: string) {
+    const items = await this.prisma.purchaseItem.findMany({
+      where: { purchaseId },
+      select: { purchasePrice: true, orderedQuantity: true }
+    })
+
+    const totalAmount = items.reduce(
+      (sum, item) => sum + item.purchasePrice * item.orderedQuantity,
+      0
+    )
+
+    return this.prisma.purchase.update({
+      where: { id: purchaseId },
+      data: { totalAmount: Math.round(totalAmount * 100) / 100 },
+      include: {
+        supplier: { include: { contacts: true } },
+        items: { include: { materialItem: { include: { type: true } } } }
+      }
+    })
+  }
+
   async create(dto: CreatePurchaseDto) {
     // Validate supplier exists
     const supplier = await this.prisma.supplier.findUnique({
@@ -61,6 +86,7 @@ export class PurchasesService {
     const {
       search,
       supplierId,
+      materialItemId,
       status,
       dateFrom,
       dateTo,
@@ -81,6 +107,14 @@ export class PurchasesService {
 
     if (supplierId) {
       where.supplierId = supplierId
+    }
+
+    if (materialItemId) {
+      where.items = {
+        some: {
+          materialItemId: materialItemId
+        }
+      }
     }
 
     if (status) {
@@ -229,39 +263,20 @@ export class PurchasesService {
       throw new BadRequestException('Purchase has already been submitted')
     }
 
-    // Validate all items have status = READY
-    const notReadyItems = purchase.items.filter(
-      item => item.status !== PurchaseItemStatus.READY
+    // Validate all items have receivedQuantity > 0
+    const zeroReceivedItems = purchase.items.filter(
+      item => item.receivedQuantity <= 0
     )
 
-    if (notReadyItems.length > 0) {
-      const details = notReadyItems.map(
-        item =>
-          `Item ${item.id}: status is '${item.status}', expected 'READY'`
+    if (zeroReceivedItems.length > 0) {
+      const details = zeroReceivedItems.map(
+        item => `Item ${item.id}: receivedQuantity is ${item.receivedQuantity}`
       )
 
       throw new BadRequestException({
         error: 'Validation Error',
-        message: 'Cannot submit purchase. Not all items are ready.',
-        statusCode: 400,
-        details
-      })
-    }
-
-    // Validate all items have receivedQuantity >= orderedQuantity
-    const incompleteItems = purchase.items.filter(
-      item => item.receivedQuantity < item.orderedQuantity
-    )
-
-    if (incompleteItems.length > 0) {
-      const details = incompleteItems.map(
-        item =>
-          `Item ${item.id}: receivedQuantity (${item.receivedQuantity}) is less than orderedQuantity (${item.orderedQuantity})`
-      )
-
-      throw new BadRequestException({
-        error: 'Validation Error',
-        message: 'Cannot submit purchase. Not all items are fully received.',
+        message:
+          'Cannot submit purchase. All items must have received quantity > 0.',
         statusCode: 400,
         details
       })
@@ -285,9 +300,13 @@ export class PurchasesService {
               quantity: item.receivedQuantity,
               comment: item.comment,
               warningQty: item.warningQty,
-              materialItemId: item.materialItemId
+              materialItem: { connect: { id: item.materialItemId } },
+              supplier: { connect: { id: purchase.supplierId } }
             },
-            include: { materialItem: { include: { type: true } } }
+            include: {
+              materialItem: { include: { type: true } },
+              supplier: true
+            }
           })
         )
       )

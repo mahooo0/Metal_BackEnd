@@ -92,19 +92,19 @@ db-reset: ## Reset database
 # Docker commands
 .PHONY: docker-up
 docker-up: ## Start Docker services
-	docker-compose up -d
+	docker compose up -d
 
 .PHONY: docker-down
 docker-down: ## Stop Docker services
-	docker-compose down
+	docker compose down
 
 .PHONY: docker-logs
 docker-logs: ## Show Docker logs
-	docker-compose logs -f
+	docker compose logs -f
 
 .PHONY: docker-restart
 docker-restart: ## Restart Docker services
-	docker-compose restart
+	docker compose restart
 
 # Setup commands
 .PHONY: setup
@@ -119,7 +119,7 @@ setup-dev: setup ## Setup development environment
 first-start: ## First start: docker up, wait, migrate, seed, run backend
 	@echo "🚀 Starting first-time setup..."
 	@echo "📦 Starting Docker containers..."
-	docker-compose up -d
+	docker compose up -d
 	@echo "⏳ Waiting for services to be ready..."
 	@sleep 5
 	@echo "🔧 Generating Prisma client..."
@@ -134,8 +134,8 @@ first-start: ## First start: docker up, wait, migrate, seed, run backend
 .PHONY: fresh-start
 fresh-start: ## Fresh start: reset everything and start from scratch
 	@echo "🔄 Fresh start - resetting everything..."
-	docker-compose down -v
-	docker-compose up -d
+	docker compose down -v
+	docker compose up -d
 	@sleep 5
 	pnpm exec prisma generate
 	pnpm exec prisma db push
@@ -152,5 +152,5 @@ clean: ## Clean build artifacts
 
 .PHONY: clean-all
 clean-all: clean docker-down ## Clean everything including Docker volumes
-	docker-compose down -v
+	docker compose down -v
 	rm -rf node_modules

@@ -31,15 +31,30 @@ export class MaterialsService {
       )
     }
 
-    const { materialItemId, priceCategories, ...rest } = dto
+    // Validate that the supplierId exists
+    const supplier = await this.prisma.supplier.findUnique({
+      where: { id: dto.supplierId }
+    })
+
+    if (!supplier) {
+      throw new BadRequestException(
+        `Supplier with ID "${dto.supplierId}" not found`
+      )
+    }
+
+    const { materialItemId, supplierId, priceCategories, ...rest } = dto
 
     return this.prisma.material.create({
       data: {
         ...rest,
         priceCategories: priceCategories as object,
-        materialItem: { connect: { id: materialItemId } }
+        materialItem: { connect: { id: materialItemId } },
+        supplier: { connect: { id: supplierId } }
       },
-      include: { materialItem: { include: { type: true } } }
+      include: {
+        materialItem: { include: { type: true } },
+        supplier: true
+      }
     })
   }
 
@@ -48,6 +63,7 @@ export class MaterialsService {
       search,
       categoryId,
       typeId,
+      supplierId,
       thickness,
       sheetType,
       status,
@@ -82,12 +98,19 @@ export class MaterialsService {
     }
 
     if (sheetType) {
-      materialItemFilter.sheetType = { contains: sheetType, mode: 'insensitive' }
+      materialItemFilter.sheetType = {
+        contains: sheetType,
+        mode: 'insensitive'
+      }
       hasMaterialItemFilter = true
     }
 
     if (hasMaterialItemFilter) {
       where.materialItem = materialItemFilter
+    }
+
+    if (supplierId) {
+      where.supplierId = supplierId
     }
 
     if (status) {
@@ -102,7 +125,7 @@ export class MaterialsService {
     // Warning quantity filter - show items at or below warning threshold
     if (warningQty) {
       where.AND = [
-        { warningQty: { not: null } },
+        { warningQty: { not: null } }
         // This requires raw SQL or a workaround in Prisma
         // For now, we'll fetch and filter in memory, or use a raw query
       ]
@@ -127,7 +150,10 @@ export class MaterialsService {
         orderBy,
         skip,
         take: limit,
-        include: { materialItem: { include: { type: true } } }
+        include: {
+          materialItem: { include: { type: true } },
+          supplier: true
+        }
       }),
       this.prisma.material.count({ where })
     ])
@@ -156,7 +182,10 @@ export class MaterialsService {
   async findOne(id: string) {
     const material = await this.prisma.material.findUnique({
       where: { id },
-      include: { materialItem: { include: { type: true } } }
+      include: {
+        materialItem: { include: { type: true } },
+        supplier: true
+      }
     })
 
     if (!material) {
@@ -182,16 +211,37 @@ export class MaterialsService {
       }
     }
 
-    const { materialItemId, priceCategories, ...rest } = dto
+    // Validate supplierId if provided
+    if (dto.supplierId) {
+      const supplier = await this.prisma.supplier.findUnique({
+        where: { id: dto.supplierId }
+      })
+
+      if (!supplier) {
+        throw new BadRequestException(
+          `Supplier with ID "${dto.supplierId}" not found`
+        )
+      }
+    }
+
+    const { materialItemId, supplierId, priceCategories, ...rest } = dto
 
     return this.prisma.material.update({
       where: { id },
       data: {
         ...rest,
         ...(priceCategories && { priceCategories: priceCategories as object }),
-        ...(materialItemId && { materialItem: { connect: { id: materialItemId } } })
+        ...(materialItemId && {
+          materialItem: { connect: { id: materialItemId } }
+        }),
+        ...(supplierId && {
+          supplier: { connect: { id: supplierId } }
+        })
       },
-      include: { materialItem: { include: { type: true } } }
+      include: {
+        materialItem: { include: { type: true } },
+        supplier: true
+      }
     })
   }
 
@@ -201,7 +251,10 @@ export class MaterialsService {
     return this.prisma.material.update({
       where: { id },
       data: { status: dto.status },
-      include: { materialItem: { include: { type: true } } }
+      include: {
+        materialItem: { include: { type: true } },
+        supplier: true
+      }
     })
   }
 
@@ -217,6 +270,7 @@ export class MaterialsService {
   async createFromPurchaseItem(data: {
     date: Date
     materialItemId: string
+    supplierId: string
     width: number
     length: number
     dimensions?: string
@@ -227,15 +281,19 @@ export class MaterialsService {
     comment?: string
     warningQty?: number
   }) {
-    const { materialItemId, ...rest } = data
+    const { materialItemId, supplierId, ...rest } = data
 
     return this.prisma.material.create({
       data: {
         ...rest,
         status: MaterialStatus.IN_PROCESS,
-        materialItem: { connect: { id: materialItemId } }
+        materialItem: { connect: { id: materialItemId } },
+        supplier: { connect: { id: supplierId } }
       },
-      include: { materialItem: { include: { type: true } } }
+      include: {
+        materialItem: { include: { type: true } },
+        supplier: true
+      }
     })
   }
 }

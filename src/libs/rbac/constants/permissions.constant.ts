@@ -104,6 +104,12 @@ export const Permission = {
   METAL_BRANDS_UPDATE: 'metal-brands:update',
   METAL_BRANDS_DELETE: 'metal-brands:delete',
 
+  // Categories
+  CATEGORIES_READ: 'categories:read',
+  CATEGORIES_CREATE: 'categories:create',
+  CATEGORIES_UPDATE: 'categories:update',
+  CATEGORIES_DELETE: 'categories:delete',
+
   TASK_TYPES_READ: 'task-types:read',
   TASK_TYPES_CREATE: 'task-types:create',
   TASK_TYPES_UPDATE: 'task-types:update',
@@ -146,7 +152,27 @@ export const Permission = {
   PURCHASE_ITEMS_UPDATE: 'purchase-items:update',
   PURCHASE_ITEMS_DELETE: 'purchase-items:delete',
   PURCHASE_ITEMS_RECEIVE: 'purchase-items:receive',
-  PURCHASE_ITEMS_UPDATE_STATUS: 'purchase-items:update-status'
+  PURCHASE_ITEMS_UPDATE_STATUS: 'purchase-items:update-status',
+
+  // Inventories (Inventory Checks)
+  INVENTORIES_READ: 'inventories:read',
+  INVENTORIES_CREATE: 'inventories:create',
+  INVENTORIES_UPDATE: 'inventories:update',
+  INVENTORIES_DELETE: 'inventories:delete',
+  INVENTORIES_APPROVE: 'inventories:approve',
+
+  // Write-offs
+  WRITE_OFFS_READ: 'write-offs:read',
+  WRITE_OFFS_CREATE: 'write-offs:create',
+  WRITE_OFFS_UPDATE: 'write-offs:update',
+  WRITE_OFFS_DELETE: 'write-offs:delete',
+  WRITE_OFFS_APPROVE: 'write-offs:approve',
+
+  // Price Lists
+  PRICE_LISTS_READ: 'price-lists:read',
+  PRICE_LISTS_CREATE: 'price-lists:create',
+  PRICE_LISTS_UPDATE: 'price-lists:update',
+  PRICE_LISTS_DELETE: 'price-lists:delete'
 } as const
 
 export type PermissionValue = (typeof Permission)[keyof typeof Permission]

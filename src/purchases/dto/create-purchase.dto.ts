@@ -39,13 +39,14 @@ export class CreatePurchaseDto {
   @IsNotEmpty()
   supplierId: string
 
-  @ApiProperty({
-    description: 'Total amount',
+  @ApiPropertyOptional({
+    description: 'Total amount (calculated automatically from items)',
     example: 943.65
   })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  totalAmount: number
+  totalAmount?: number
 
   @ApiProperty({
     description: 'Purchase status',

@@ -47,7 +47,10 @@ export class MaterialItemsController {
     status: 201,
     description: 'Material item created successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or metal brand not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or metal brand not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async create(@Body() dto: CreateMaterialItemDto) {
     return this.materialItemsService.create(dto)
@@ -57,7 +60,9 @@ export class MaterialItemsController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(PermissionsGuard)
   @RequirePermissions(Permission.MATERIAL_ITEMS_READ)
-  @ApiOperation({ summary: 'Get all material items with filters and pagination' })
+  @ApiOperation({
+    summary: 'Get all material items with filters and pagination'
+  })
   @ApiResponse({
     status: 200,
     description: 'Returns paginated list of material items'
@@ -93,7 +98,10 @@ export class MaterialItemsController {
     status: 200,
     description: 'Material item updated successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or metal brand not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or metal brand not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Material item not found' })
   async update(@Param('id') id: string, @Body() dto: UpdateMaterialItemDto) {

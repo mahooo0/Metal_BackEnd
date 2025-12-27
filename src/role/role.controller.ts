@@ -162,8 +162,8 @@ export class RoleController {
   async create(@Req() req: Request, @Body() dto: CreateRoleDto) {
     // WORKAROUND: Use req.body directly as DTO transformation has issues
     const actualDto: CreateRoleDto = {
-      name: (req.body as any)?.name,
-      permissions: (req.body as any)?.permissions
+      name: req.body?.name,
+      permissions: req.body?.permissions
     }
 
     return this.roleService.create(actualDto)
@@ -201,8 +201,8 @@ export class RoleController {
   ) {
     // WORKAROUND: Use req.body directly as DTO transformation has issues
     const actualDto: UpdateRoleDto = {
-      name: (req.body as any)?.name,
-      permissions: (req.body as any)?.permissions
+      name: req.body?.name,
+      permissions: req.body?.permissions
     }
 
     return this.roleService.update(id, actualDto)

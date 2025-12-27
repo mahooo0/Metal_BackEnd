@@ -49,7 +49,10 @@ export class MaterialsController {
     status: 201,
     description: 'Material created successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or material item not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or material item not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   async create(@Body() dto: CreateMaterialDto) {
     return this.materialsService.create(dto)
@@ -95,7 +98,10 @@ export class MaterialsController {
     status: 200,
     description: 'Material updated successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or material item not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or material item not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Material not found' })
   async update(@Param('id') id: string, @Body() dto: UpdateMaterialDto) {

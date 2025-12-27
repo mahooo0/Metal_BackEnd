@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min
+} from 'class-validator'
 
 export enum MetalBrandSortBy {
   NAME = 'name',
@@ -20,6 +28,14 @@ export class MetalBrandQueryDto {
   @IsString()
   @IsOptional()
   search?: string
+
+  @ApiPropertyOptional({
+    description: 'Filter by category ID',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @IsUUID()
+  @IsOptional()
+  categoryId?: string
 
   @ApiPropertyOptional({
     description: 'Sort by field',

@@ -41,7 +41,8 @@ export class CreateSupplierDto {
 
   @ApiPropertyOptional({
     description: 'Bank details',
-    example: 'IBAN: UA393287040000002600205431294 в АТ КБ "ПРИВАТБАНК" (МФО 328704)'
+    example:
+      'IBAN: UA393287040000002600205431294 в АТ КБ "ПРИВАТБАНК" (МФО 328704)'
   })
   @IsOptional()
   @IsString()

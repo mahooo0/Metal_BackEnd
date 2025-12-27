@@ -28,6 +28,7 @@ import { PermissionsGuard } from '@/libs/rbac/guards'
 
 import {
   CreatePurchaseItemDto,
+  PurchaseItemQueryDto,
   ReceivePurchaseItemDto,
   UpdatePurchaseItemDto,
   UpdatePurchaseItemStatusDto
@@ -51,7 +52,10 @@ export class PurchaseItemsController {
     status: 201,
     description: 'Item added to purchase successfully'
   })
-  @ApiResponse({ status: 400, description: 'Invalid data or material item not found' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid data or material item not found'
+  })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ApiResponse({ status: 404, description: 'Purchase not found' })
   async create(
@@ -67,6 +71,7 @@ export class PurchaseItemsController {
   @RequirePermissions(Permission.PURCHASE_ITEMS_READ)
   @ApiOperation({ summary: 'Get all items for a purchase' })
   @ApiParam({ name: 'purchaseId', description: 'Purchase ID (UUID)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by material name, type or sheet type' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({
@@ -77,14 +82,9 @@ export class PurchaseItemsController {
   @ApiResponse({ status: 404, description: 'Purchase not found' })
   async findAll(
     @Param('purchaseId') purchaseId: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number
+    @Query() query: PurchaseItemQueryDto
   ) {
-    return this.purchaseItemsService.findAll(
-      purchaseId,
-      page ? Number(page) : 1,
-      limit ? Number(limit) : 20
-    )
+    return this.purchaseItemsService.findAll(purchaseId, query)
   }
 
   @Get(':id')

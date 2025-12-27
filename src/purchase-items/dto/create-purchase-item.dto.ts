@@ -86,6 +86,22 @@ export class CreatePurchaseItemDto {
   priceCategories: PriceCategoriesDto
 
   @ApiProperty({
+    description: 'Purchase price per unit',
+    example: 100.5
+  })
+  @IsNumber()
+  @Min(0)
+  purchasePrice: number
+
+  @ApiProperty({
+    description: 'Sale price per unit',
+    example: 150.75
+  })
+  @IsNumber()
+  @Min(0)
+  salePrice: number
+
+  @ApiProperty({
     description: 'Item status',
     enum: PurchaseItemStatus,
     example: 'ORDERED'

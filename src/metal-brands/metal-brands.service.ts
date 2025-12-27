@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException
@@ -29,14 +30,26 @@ export class MetalBrandsService {
       )
     }
 
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId }
+    })
+
+    if (!category) {
+      throw new BadRequestException(
+        `Category with ID "${dto.categoryId}" not found`
+      )
+    }
+
     return this.prisma.metalBrand.create({
-      data: dto
+      data: dto,
+      include: { category: true }
     })
   }
 
   async findAll(query: MetalBrandQueryDto) {
     const {
       search,
+      categoryId,
       sortBy = MetalBrandSortBy.NAME,
       sortDirection = 'asc',
       page = 1,
@@ -47,6 +60,10 @@ export class MetalBrandsService {
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' }
+    }
+
+    if (categoryId) {
+      where.categoryId = categoryId
     }
 
     const orderBy: Prisma.MetalBrandOrderByWithRelationInput =
@@ -61,7 +78,8 @@ export class MetalBrandsService {
         where,
         orderBy,
         skip,
-        take: limit
+        take: limit,
+        include: { category: true }
       }),
       this.prisma.metalBrand.count({ where })
     ])
@@ -79,7 +97,8 @@ export class MetalBrandsService {
 
   async findOne(id: string) {
     const metalBrand = await this.prisma.metalBrand.findUnique({
-      where: { id }
+      where: { id },
+      include: { category: true }
     })
 
     if (!metalBrand) {
@@ -104,9 +123,22 @@ export class MetalBrandsService {
       }
     }
 
+    if (dto.categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: dto.categoryId }
+      })
+
+      if (!category) {
+        throw new BadRequestException(
+          `Category with ID "${dto.categoryId}" not found`
+        )
+      }
+    }
+
     return this.prisma.metalBrand.update({
       where: { id },
-      data: dto
+      data: dto,
+      include: { category: true }
     })
   }
 

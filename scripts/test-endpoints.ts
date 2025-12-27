@@ -114,6 +114,47 @@ const CRUD_MODULES: Record<string, CrudTestConfig> = {
       name: 'Updated Counterparty ' + Date.now(),
       comment: 'Updated comment'
     }
+  },
+  categories: {
+    name: 'Categories',
+    basePath: '/categories',
+    createData: {
+      name: 'Test Category ' + Date.now()
+    },
+    updateData: {
+      name: 'Updated Category ' + Date.now()
+    }
+  },
+  'bending-prices': {
+    name: 'Bending Prices',
+    basePath: '/price-lists/bending',
+    createData: {
+      thickness: 2.0,
+      coefficient: 1.5,
+      basePrice: 100,
+      minPrice: 50,
+      description: 'Test bending price'
+    },
+    updateData: {
+      basePrice: 120,
+      coefficient: 1.6
+    }
+  },
+  'cutting-prices': {
+    name: 'Cutting Prices',
+    basePath: '/price-lists/cutting',
+    createData: {
+      thickness: 2.0,
+      pricePerMeter: 50,
+      pricePerHour: 1000,
+      setupPrice: 200,
+      minPrice: 30,
+      description: 'Test cutting price'
+    },
+    updateData: {
+      pricePerMeter: 55,
+      pricePerHour: 1100
+    }
   }
 }
 
@@ -473,7 +514,12 @@ async function runReadTests(api: AxiosInstance): Promise<TestResult[]> {
     { path: '/purchases', name: 'Purchases' },
     { path: '/order-requests', name: 'Order Requests' },
     { path: '/tasks', name: 'Tasks' },
-    { path: '/plan-records', name: 'Plan Records' }
+    { path: '/plan-records', name: 'Plan Records' },
+    { path: '/inventories', name: 'Inventories' },
+    { path: '/write-offs', name: 'Write-offs' },
+    { path: '/categories', name: 'Categories' },
+    { path: '/price-lists/bending', name: 'Bending Prices' },
+    { path: '/price-lists/cutting', name: 'Cutting Prices' }
   ]
 
   log('\n📋 Read-Only Tests', 'blue')

@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException
+} from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { PrismaService } from '@/prisma/prisma.service'
@@ -18,6 +22,9 @@ describe('MetalBrandsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
       count: jest.fn()
+    },
+    category: {
+      findUnique: jest.fn()
     }
   }
 
@@ -40,16 +47,26 @@ describe('MetalBrandsService', () => {
   })
 
   describe('create', () => {
-    const createDto = { name: 'Steel A1' }
+    const categoryId = 'category-uuid-1'
+    const createDto = { name: 'Steel A1', categoryId }
+    const category = {
+      id: categoryId,
+      name: 'Metals',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
     const createdBrand = {
       id: 'uuid-1',
       name: 'Steel A1',
+      categoryId,
+      category,
       createdAt: new Date(),
       updatedAt: new Date()
     }
 
     it('should create a new metal brand', async () => {
       mockPrismaService.metalBrand.findUnique.mockResolvedValue(null)
+      mockPrismaService.category.findUnique.mockResolvedValue(category)
       mockPrismaService.metalBrand.create.mockResolvedValue(createdBrand)
 
       const result = await service.create(createDto)
@@ -62,6 +79,15 @@ describe('MetalBrandsService', () => {
 
       await expect(service.create(createDto)).rejects.toThrow(ConflictException)
     })
+
+    it('should throw BadRequestException if category not found', async () => {
+      mockPrismaService.metalBrand.findUnique.mockResolvedValue(null)
+      mockPrismaService.category.findUnique.mockResolvedValue(null)
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        BadRequestException
+      )
+    })
   })
 
   describe('findAll', () => {
@@ -69,12 +95,16 @@ describe('MetalBrandsService', () => {
       {
         id: 'uuid-1',
         name: 'Brand A',
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Cat 1' },
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: 'uuid-2',
         name: 'Brand B',
+        categoryId: 'cat-1',
+        category: { id: 'cat-1', name: 'Cat 1' },
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -107,12 +137,27 @@ describe('MetalBrandsService', () => {
 
       expect(result.data).toHaveLength(1)
     })
+
+    it('should filter by categoryId', async () => {
+      mockPrismaService.metalBrand.findMany.mockResolvedValue(brands)
+      mockPrismaService.metalBrand.count.mockResolvedValue(2)
+
+      const result = await service.findAll({
+        categoryId: 'cat-1',
+        page: 1,
+        limit: 20
+      })
+
+      expect(result.data).toEqual(brands)
+    })
   })
 
   describe('findOne', () => {
     const brand = {
       id: 'uuid-1',
       name: 'Steel A1',
+      categoryId: 'cat-1',
+      category: { id: 'cat-1', name: 'Cat 1' },
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -136,6 +181,8 @@ describe('MetalBrandsService', () => {
     const brand = {
       id: 'uuid-1',
       name: 'Old Name',
+      categoryId: 'cat-1',
+      category: { id: 'cat-1', name: 'Cat 1' },
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -164,12 +211,23 @@ describe('MetalBrandsService', () => {
         service.update('uuid-1', { name: 'New Name' })
       ).rejects.toThrow(ConflictException)
     })
+
+    it('should throw BadRequestException if new categoryId not found', async () => {
+      mockPrismaService.metalBrand.findUnique.mockResolvedValue(brand)
+      mockPrismaService.category.findUnique.mockResolvedValue(null)
+
+      await expect(
+        service.update('uuid-1', { categoryId: 'invalid-cat-id' })
+      ).rejects.toThrow(BadRequestException)
+    })
   })
 
   describe('remove', () => {
     const brand = {
       id: 'uuid-1',
       name: 'Steel A1',
+      categoryId: 'cat-1',
+      category: { id: 'cat-1', name: 'Cat 1' },
       createdAt: new Date(),
       updatedAt: new Date()
     }
