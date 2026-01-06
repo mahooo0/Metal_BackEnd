@@ -16,6 +16,9 @@ describe('OrderTypesService', () => {
       findFirst: jest.fn(),
       update: jest.fn(),
       delete: jest.fn()
+    },
+    orderRequest: {
+      count: jest.fn()
     }
   }
 
@@ -172,6 +175,7 @@ describe('OrderTypesService', () => {
 
     it('should delete order type', async () => {
       mockPrismaService.orderType.findUnique.mockResolvedValue(orderType)
+      mockPrismaService.orderRequest.count.mockResolvedValue(0)
       mockPrismaService.orderType.delete.mockResolvedValue(orderType)
 
       const result = await service.remove('uuid-1')

@@ -180,9 +180,7 @@ export class PurchaseItemsService {
 
     // Simplified status: 0 = ORDERED, >0 = READY
     const newStatus =
-      newReceivedQty > 0
-        ? PurchaseItemStatus.READY
-        : PurchaseItemStatus.ORDERED
+      newReceivedQty > 0 ? PurchaseItemStatus.READY : PurchaseItemStatus.ORDERED
 
     const updatedItem = await this.prisma.purchaseItem.update({
       where: { id: itemId },

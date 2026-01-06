@@ -8,7 +8,6 @@ import {
   Param,
   Patch,
   Post,
-  Req,
   UseGuards
 } from '@nestjs/common'
 import {
@@ -17,7 +16,6 @@ import {
   ApiResponse,
   ApiTags
 } from '@nestjs/swagger'
-import type { Request } from 'express'
 
 import { Authorization } from '@/auth/decorators/auth.decorator'
 import { Permission, PermissionsGuard, RequirePermissions } from '@/libs/rbac'
@@ -159,14 +157,8 @@ export class RoleController {
     status: 409,
     description: 'Role with this name already exists'
   })
-  async create(@Req() req: Request, @Body() dto: CreateRoleDto) {
-    // WORKAROUND: Use req.body directly as DTO transformation has issues
-    const actualDto: CreateRoleDto = {
-      name: req.body?.name,
-      permissions: req.body?.permissions
-    }
-
-    return this.roleService.create(actualDto)
+  async create(@Body() dto: CreateRoleDto) {
+    return this.roleService.create(dto)
   }
 
   @Patch(':id')
@@ -194,18 +186,8 @@ export class RoleController {
   })
   @ApiResponse({ status: 404, description: 'Role with specified ID not found' })
   @ApiResponse({ status: 409, description: 'Role name already exists' })
-  async update(
-    @Req() req: Request,
-    @Param('id') id: string,
-    @Body() dto: UpdateRoleDto
-  ) {
-    // WORKAROUND: Use req.body directly as DTO transformation has issues
-    const actualDto: UpdateRoleDto = {
-      name: req.body?.name,
-      permissions: req.body?.permissions
-    }
-
-    return this.roleService.update(id, actualDto)
+  async update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
+    return this.roleService.update(id, dto)
   }
 
   @Delete(':id')

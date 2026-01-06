@@ -71,7 +71,12 @@ export class PurchaseItemsController {
   @RequirePermissions(Permission.PURCHASE_ITEMS_READ)
   @ApiOperation({ summary: 'Get all items for a purchase' })
   @ApiParam({ name: 'purchaseId', description: 'Purchase ID (UUID)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by material name, type or sheet type' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by material name, type or sheet type'
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({

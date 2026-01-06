@@ -311,10 +311,7 @@ export class InventoriesService {
         },
         include: {
           items: {
-            orderBy: [
-              { actualQuantity: 'desc' },
-              { createdAt: 'asc' }
-            ],
+            orderBy: [{ actualQuantity: 'desc' }, { createdAt: 'asc' }],
             include: {
               material: {
                 include: { materialItem: { include: { type: true } } }

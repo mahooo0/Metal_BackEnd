@@ -53,7 +53,7 @@ export class TwoFactorService {
       }
     })
 
-    this.mailService.sendTwoFactorTokenEmail(email, token)
+    void this.mailService.sendTwoFactorTokenEmail(email, token)
 
     return twoFactorToken
   }
