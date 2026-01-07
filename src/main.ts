@@ -63,14 +63,22 @@ async function bootstrap() {
     })
   )
 
+  const allowedOrigins: (string | RegExp)[] = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    /\.traefik\.me$/
+  ]
+
+  const envOrigin = config.get<string>('ALLOWED_ORIGIN')
+  if (envOrigin && !allowedOrigins.includes(envOrigin)) {
+    allowedOrigins.push(envOrigin)
+  }
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
