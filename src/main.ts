@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common'
+import { Logger, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
@@ -13,7 +13,12 @@ import { ms, StringValue } from '@/libs/common/utils/ms.util'
 import { parseBoolean } from '@/libs/common/utils/parse-boolean.util'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const logger = new Logger('Bootstrap')
+  logger.log('Starting Metal Backend application...')
+
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose']
+  })
 
   const config = app.get(ConfigService)
   const redis = new IORedis(config.getOrThrow('REDIS_URI'))
@@ -104,6 +109,11 @@ async function bootstrap() {
     }
   })
 
-  await app.listen(config.getOrThrow<number>('APPLICATION_PORT'))
+  const port = config.getOrThrow<number>('APPLICATION_PORT')
+  await app.listen(port)
+
+  logger.log(`Application is running on port ${port}`)
+  logger.log(`Swagger documentation available at http://localhost:${port}/api`)
+  logger.log(`Environment: ${config.get('NODE_ENV', 'development')}`)
 }
 void bootstrap()
